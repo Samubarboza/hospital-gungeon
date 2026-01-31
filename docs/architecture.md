@@ -1,9 +1,7 @@
-# hospital-gungeon
-```
 hospital-gungeon/
 │
 ├── package.json
-├── vite.config.js              # o config del bundler que uses
+├── vite.config.js              # o config del bundler
 ├── index.html
 ├── README.md
 │
@@ -131,4 +129,3 @@ hospital-gungeon/
     ├── architecture.md
     ├── coding-guidelines.md
     └── dev-onboarding.md
-```
