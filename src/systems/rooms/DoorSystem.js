@@ -1,9 +1,7 @@
 /**
- * DoorSystem.js - VERSIÓN TOP-DOWN MEJORADA
- * Mejoras:
- * - Puertas pegadas a los bordes de la sala
- * - Mejor visualización (sprite-like)
- * - Animación de apertura/cierre
+ * DoorSystem-TopDown.js
+ * Sistema de puertas mejorado para vista top-down
+ * Soporta navegación bidireccional (avanzar/retroceder)
  */
 
 export class DoorSystem {
@@ -12,9 +10,9 @@ export class DoorSystem {
     this.doors = [];
     
     // Configuración visual
-    this.doorThickness = 15;  // Grosor de la puerta
-    this.doorLength = 80;     // Largo de la puerta
-    this.animationProgress = 0; // Para animación de apertura
+    this.doorThickness = 15;
+    this.doorLength = 80;
+    this.animationProgress = 0;
   }
 
   /**
@@ -26,8 +24,9 @@ export class DoorSystem {
         x: door.x,
         y: door.y,
         direction: door.direction,
-        locked: door.locked,
-        openAmount: door.locked ? 0 : 1 // 0 = cerrada, 1 = abierta
+        locked: door.locked !== undefined ? door.locked : true,
+        openAmount: door.locked !== undefined ? (door.locked ? 0 : 1) : 0,
+        leadsTo: door.leadsTo || null  // 'next', 'prev', o null
       };
 
       // Ajustar dimensiones según orientación
@@ -54,7 +53,7 @@ export class DoorSystem {
       door.openAmount = 0;
     });
     
-    console.log('[DoorSystem] 🔒 Puertas bloqueadas');
+    console.log('[DoorSystem] 🔒 TODAS las puertas bloqueadas');
     this.eventBus.emit('doors:locked');
   }
 
@@ -67,8 +66,27 @@ export class DoorSystem {
       door.openAmount = 1;
     });
     
-    console.log('[DoorSystem] 🚪 Puertas desbloqueadas');
+    console.log('[DoorSystem] 🚪 TODAS las puertas desbloqueadas');
     this.eventBus.emit('doors:unlocked');
+  }
+
+  /**
+   * Desbloquea solo las puertas que permiten avanzar
+   */
+  unlockForwardDoors() {
+    this.doors.forEach(door => {
+      if (door.leadsTo === 'next') {
+        door.locked = false;
+        door.openAmount = 1;
+      } else {
+        // Mantener bloqueadas las puertas de retroceso
+        door.locked = true;
+        door.openAmount = 0;
+      }
+    });
+    
+    console.log('[DoorSystem] 🚪 Puertas de AVANCE desbloqueadas');
+    this.eventBus.emit('doors:forward_unlocked');
   }
 
   /**
@@ -90,13 +108,12 @@ export class DoorSystem {
 
   /**
    * Verifica colisión con puertas (solo abiertas)
-   * Incluye zona de activación más grande
    */
   checkDoorCollision(player) {
     for (let door of this.doors) {
       if (door.locked || door.openAmount < 0.8) continue;
 
-      // Zona de activación extendida (más fácil pasar)
+      // Zona de activación extendida
       const activationZone = {
         x: door.x - door.width / 2 - 10,
         y: door.y - door.height / 2 - 10,
@@ -105,7 +122,7 @@ export class DoorSystem {
       };
 
       if (this._isColliding(player, activationZone)) {
-        console.log(`[DoorSystem] ✅ Jugador atravesó puerta ${door.direction}`);
+        console.log(`[DoorSystem] ✅ Jugador atravesó puerta ${door.direction} → ${door.leadsTo}`);
         return door;
       }
     }
@@ -114,7 +131,7 @@ export class DoorSystem {
   }
 
   /**
-   * Detección de colisión AABB mejorada
+   * Detección de colisión AABB
    */
   _isColliding(rect1, rect2) {
     return rect1.x < rect2.x + rect2.width &&
@@ -176,7 +193,7 @@ export class DoorSystem {
         }
       }
 
-      // Indicador visual (emoji o símbolo)
+      // Indicador visual
       if (door.openAmount < 0.5) {
         ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 16px Arial';
@@ -194,7 +211,9 @@ export class DoorSystem {
           'north': '↑',
           'south': '↓',
           'east': '→',
-          'west': '←'
+          'west': '←',
+          'right': '→',
+          'left': '←'
         };
         ctx.fillText(arrows[door.direction] || '●', door.x, door.y);
       }

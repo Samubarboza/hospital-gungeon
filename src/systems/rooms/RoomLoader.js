@@ -1,185 +1,216 @@
 /**
- * RoomLoader.js
- * Sistema principal que coordina:
- * - Carga de salas desde templates
- * - Spawneo de enemigos
- * - Control de puertas (bloqueo/desbloqueo)
- * - Flujo de la sala (entrada -> combate -> salida)
+ * RoomLoader-TopDown-4Salas.js
+ * Sistema de carga de salas lineal con 4 salas fijas
+ * Permite avanzar y retroceder (sin enemigos al volver)
  */
 
-import { getRoomTemplate, getRandomRoomTemplate } from './RoomTemplates.js';
-import { DoorSystem } from './DoorSystem.js';
-
 export class RoomLoader {
-  constructor(eventBus) {
+  constructor(game, eventBus) {
+    this.game = game;
     this.eventBus = eventBus;
-    this.doorSystem = new DoorSystem(eventBus);
-    
-    this.currentRoom = null;
-    this.enemiesInRoom = [];
-    this.roomCleared = false;
-
-    // Suscribirse a eventos
-    this._setupEventListeners();
+    this.roomSequence = ['starter', 'easy', 'medium', 'boss'];
+    this.currentRoomIndex = 0;
+    this.clearedRooms = new Set(); // Guarda qué salas ya fueron completadas
   }
 
   /**
-   * Configura los listeners de eventos
-   * @private
+   * Carga la primera sala (inicio del juego)
    */
-  _setupEventListeners() {
-    // Cuando un enemigo muere, verificar si la sala está limpia
-    this.eventBus.on('enemy:died', () => {
-      this._checkRoomCleared();
+  loadFirstRoom() {
+    this.currentRoomIndex = 0;
+    this.clearedRooms.clear();
+    this.loadRoomByIndex(0);
+  }
+
+  /**
+   * Carga una sala específica por índice
+   */
+  loadRoomByIndex(index, playerStartSide = 'left') {
+    const roomId = this.roomSequence[index];
+    const template = this.game.ROOM_TEMPLATES[roomId];
+    
+    if (!template) {
+      console.error(`[RoomLoader] Template no encontrado: ${roomId}`);
+      return;
+    }
+
+    console.log(`[RoomLoader] Cargando sala: ${template.name} (${index + 1}/${this.roomSequence.length})`);
+
+    // Limpiar estado anterior
+    this.game.enemies = [];
+    this.game.bullets = [];
+    this.game.walls = [];
+    this.game.obstacles = [];
+
+    // Configurar sala
+    this.game.canvas.width = template.width;
+    this.game.canvas.height = template.height;
+    this.game.canvas.style.background = template.backgroundColor;
+
+    // Crear enemigos SOLO si la sala NO ha sido completada
+    const isCleared = this.clearedRooms.has(roomId);
+    
+    if (!isCleared && template.enemies.length > 0) {
+      console.log(`[RoomLoader] Sala con ${template.enemies.length} enemigos (primera vez)`);
+      template.enemies.forEach(enemyData => {
+        const enemy = {
+          x: enemyData.x,
+          y: enemyData.y,
+          width: enemyData.type === 'boss' ? 50 : 30,
+          height: enemyData.type === 'boss' ? 50 : 30,
+          hp: enemyData.hp,
+          maxHp: enemyData.hp,
+          speed: enemyData.type === 'fast' ? 1.5 : enemyData.type === 'boss' ? 0.8 : 1,
+          type: enemyData.type || 'basic',
+          color: enemyData.type === 'boss' ? '#ff0000' : enemyData.type === 'fast' ? '#ff9900' : '#ff4444'
+        };
+        this.game.enemies.push(enemy);
+      });
+    } else if (isCleared) {
+      console.log(`[RoomLoader] Sala ya completada - Sin enemigos`);
+    }
+
+    // Crear paredes
+    template.walls.forEach(wall => {
+      this.game.walls.push({ ...wall });
     });
-  }
 
-  /**
-   * Carga una sala específica por ID de template
-   * @param {string} templateId - ID del template ('starter', 'simple', etc.)
-   */
-  loadRoom(templateId) {
-    const template = getRoomTemplate(templateId);
-    this._initializeRoom(template);
-  }
-
-  /**
-   * Carga una sala aleatoria
-   */
-  loadRandomRoom() {
-    const template = getRandomRoomTemplate();
-    this._initializeRoom(template);
-  }
-
-  /**
-   * Inicializa una sala con su template
-   * @private
-   */
-  _initializeRoom(template) {
-    console.log(`[RoomLoader] Cargando sala: ${template.id}`);
-    
-    // Guardar referencia a la sala actual
-    this.currentRoom = { ...template };
-    this.roomCleared = false;
+    // Crear obstáculos
+    template.obstacles.forEach(obs => {
+      this.game.obstacles.push({ ...obs });
+    });
 
     // Inicializar puertas
-    this.doorSystem.initDoors(template.doors);
+    this.game.doorSystem.initDoors(template.doors);
 
-    // Si hay enemigos, bloquear puertas
-    if (template.enemies.length > 0) {
-      this.doorSystem.lockAllDoors();
-      console.log(`[RoomLoader] Sala con ${template.enemies.length} enemigos - Puertas bloqueadas`);
+    // Bloquear puertas SOLO si hay enemigos
+    if (this.game.enemies.length > 0) {
+      this.game.doorSystem.lockAllDoors();
+      console.log(`[RoomLoader] Puertas bloqueadas (hay ${this.game.enemies.length} enemigos)`);
     } else {
-      // Si no hay enemigos, dejar puertas abiertas
-      this.doorSystem.unlockAllDoors();
-      console.log('[RoomLoader] Sala sin enemigos - Puertas abiertas');
-      this.roomCleared = true;
+      // Si no hay enemigos, desbloquear todas las puertas
+      this.game.doorSystem.unlockAllDoors();
+      console.log(`[RoomLoader] Puertas desbloqueadas (sin enemigos)`);
     }
 
-    // Emitir evento de sala cargada con datos de enemigos
+    // Posicionar jugador según de dónde viene
+    if (playerStartSide === 'left') {
+      this.game.player.x = 50;
+      this.game.player.y = 300;
+    } else if (playerStartSide === 'right') {
+      this.game.player.x = template.width - 80;
+      this.game.player.y = 300;
+    }
+
+    // Emitir evento de sala cargada
     this.eventBus.emit('room:loaded', {
-      roomId: template.id,
-      enemies: template.enemies,
-      width: template.width,
-      height: template.height
+      roomId,
+      roomName: template.name,
+      index: index + 1,
+      total: this.roomSequence.length,
+      isCleared
     });
-
-    // Guardar enemigos en la sala (serán usados para tracking)
-    this.enemiesInRoom = [...template.enemies];
   }
 
   /**
-   * Verifica si quedan enemigos en la sala
-   * Si no quedan, desbloquea las puertas
-   * @private
+   * Maneja la entrada a una puerta
    */
-  _checkRoomCleared() {
-    // Decrementar contador de enemigos
-    this.enemiesInRoom.pop();
+  handleDoorEntry(door) {
+    console.log(`[RoomLoader] Puerta activada: ${door.direction} → ${door.leadsTo}`);
 
-    console.log(`[RoomLoader] Enemigos restantes: ${this.enemiesInRoom.length}`);
-
-    // Si no quedan enemigos y la sala no estaba limpia
-    if (this.enemiesInRoom.length === 0 && !this.roomCleared) {
-      this._onRoomCleared();
+    if (door.leadsTo === 'next') {
+      this.nextRoom();
+    } else if (door.leadsTo === 'prev') {
+      this.previousRoom();
     }
   }
 
   /**
-   * Se ejecuta cuando la sala se limpia de enemigos
-   * @private
+   * Avanza a la siguiente sala
    */
-  _onRoomCleared() {
-    console.log('[RoomLoader] ¡Sala limpia! Desbloqueando puertas...');
+  nextRoom() {
+    // Marcar sala actual como completada
+    const currentRoomId = this.roomSequence[this.currentRoomIndex];
+    this.clearedRooms.add(currentRoomId);
+    console.log(`[RoomLoader] Sala "${currentRoomId}" marcada como completada`);
+
+    this.currentRoomIndex++;
     
-    this.roomCleared = true;
-    this.doorSystem.unlockAllDoors();
-    
-    this.eventBus.emit('room:cleared', {
-      roomId: this.currentRoom.id
-    });
+    // Si llegamos a la sala del boss y la completamos, el juego termina
+    if (this.currentRoomIndex >= this.roomSequence.length) {
+      console.log(`[RoomLoader] ¡Juego completado!`);
+      this.eventBus.emit('game:completed');
+      return;
+    }
+
+    // Cargar siguiente sala (jugador aparece en el lado izquierdo)
+    this.loadRoomByIndex(this.currentRoomIndex, 'left');
   }
 
   /**
-   * Actualiza el sistema (llamar en el game loop)
-   * Verifica colisiones con puertas
-   * @param {Object} player - Objeto del jugador
+   * Retrocede a la sala anterior
    */
-  update(player) {
-    // Verificar si el jugador toca una puerta desbloqueada
-    const doorTouched = this.doorSystem.checkDoorCollision(player);
-    
-    if (doorTouched) {
-      this._onPlayerPassedDoor(doorTouched);
+  previousRoom() {
+    if (this.currentRoomIndex <= 0) {
+      console.log(`[RoomLoader] Ya estás en la primera sala`);
+      return;
+    }
+
+    this.currentRoomIndex--;
+    console.log(`[RoomLoader] Retrocediendo a sala ${this.currentRoomIndex + 1}`);
+
+    // Cargar sala anterior (jugador aparece en el lado derecho)
+    this.loadRoomByIndex(this.currentRoomIndex, 'right');
+  }
+
+  /**
+   * Marca la sala actual como completada (cuando se eliminan todos los enemigos)
+   */
+  markCurrentRoomAsCleared() {
+    const currentRoomId = this.roomSequence[this.currentRoomIndex];
+    this.clearedRooms.add(currentRoomId);
+    console.log(`[RoomLoader] ✅ Sala "${currentRoomId}" completada`);
+
+    // Si completamos la sala del boss, terminar el juego
+    if (currentRoomId === 'boss') {
+      console.log(`[RoomLoader] 🎉 ¡BOSS DERROTADO! Juego completado`);
+      this.eventBus.emit('game:completed');
     }
   }
 
   /**
-   * Se ejecuta cuando el jugador pasa por una puerta
-   * @private
+   * Obtiene el nombre de la sala actual
    */
-  _onPlayerPassedDoor(door) {
-    console.log(`[RoomLoader] Jugador pasó por puerta ${door.direction}`);
-    
-    // Emitir evento con la dirección de la puerta
-    this.eventBus.emit('player:changedRoom', {
-      direction: door.direction,
-      fromRoom: this.currentRoom.id
-    });
-
-    // Cargar nueva sala aleatoria
-    this.loadRandomRoom();
+  getCurrentRoomName() {
+    const roomId = this.roomSequence[this.currentRoomIndex];
+    return this.game.ROOM_TEMPLATES[roomId]?.name || 'Desconocida';
   }
 
   /**
-   * Renderiza el sistema (puertas)
-   * @param {CanvasRenderingContext2D} ctx
+   * Obtiene el progreso actual del juego
    */
-  render(ctx) {
-    this.doorSystem.render(ctx);
-  }
-
-  /**
-   * Obtiene información de la sala actual
-   * @returns {Object}
-   */
-  getCurrentRoomInfo() {
+  getRoomProgress() {
     return {
-      roomId: this.currentRoom?.id || null,
-      enemiesCount: this.enemiesInRoom.length,
-      isCleared: this.roomCleared,
-      doors: this.doorSystem.getDoors()
+      current: this.currentRoomIndex + 1,
+      total: this.roomSequence.length
     };
   }
 
   /**
-   * Reinicia el sistema (para reiniciar el juego)
+   * Verifica si la sala actual ya fue completada
    */
-  reset() {
-    this.currentRoom = null;
-    this.enemiesInRoom = [];
-    this.roomCleared = false;
-    this.doorSystem.clear();
-    console.log('[RoomLoader] Sistema reiniciado');
+  isCurrentRoomCleared() {
+    const currentRoomId = this.roomSequence[this.currentRoomIndex];
+    return this.clearedRooms.has(currentRoomId);
+  }
+
+  /**
+   * Obtiene información sobre las salas completadas
+   */
+  getClearedRoomsInfo() {
+    return {
+      total: this.clearedRooms.size,
+      rooms: Array.from(this.clearedRooms)
+    };
   }
 }
