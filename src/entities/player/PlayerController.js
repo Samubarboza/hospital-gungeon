@@ -13,6 +13,8 @@ export class PlayerController {
     }
 
     update() {
+        if (this.player.stats.isDead) return;
+
         this.handleMovement(); // Bloque 1: Física
         this.handleAnimations(); // Bloque 2: Visuales
         // Si presionas R y tienes menos balas que el máximo, recarga
@@ -27,7 +29,7 @@ export class PlayerController {
         // 3. PRUEBA DE DAÑO: Si presionas K, el jugador pierde 10 de vida
 
         if (Phaser.Input.Keyboard.JustDown(this.keys.K)) {
-            this.player.stats.takeDamage(10);
+            this.player.receiveHit(20);
         }
     }
     handleMelee() {
@@ -75,6 +77,7 @@ export class PlayerController {
     }
     handleShoot() {
         const stats = this.player.stats;
+        if (stats.isDead) return;
 
         // Solo disparamos si hay balas y NO estamos recargando
         if (stats.currentAmmo > 0 && !stats.isReloading) {
