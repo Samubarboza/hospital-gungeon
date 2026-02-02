@@ -26,3 +26,4 @@ export class HubScene extends Phaser.Scene {
         });
     }
 }
+    
