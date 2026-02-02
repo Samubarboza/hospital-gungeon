@@ -4,8 +4,8 @@ import { HubScene } from './scenes/HubScene.js';
 import { SectorScene } from './scenes/SectorScene.js';
 import { BossScene } from './scenes/BossScene.js';
 import { EndingScene } from './scenes/EndingScene.js';
-import  PreloadScene  from './scenes/PreloadScene.js'; 
-import  TestScene  from './scenes/TestScene.js';
+// import  PreloadScene  from './scenes/PreloadScene.js'; 
+// import  TestScene  from './scenes/TestScene.js';
 import './core/RunManager.js';
 
 const config = {
@@ -19,7 +19,7 @@ const config = {
         default: 'arcade',
         arcade: { debug: false }
     },
-    scene: [PreloadScene,TestScene,Start, MenuScene, HubScene, SectorScene, BossScene, EndingScene],
+    scene: [Start, MenuScene, HubScene, SectorScene, BossScene, EndingScene],
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
