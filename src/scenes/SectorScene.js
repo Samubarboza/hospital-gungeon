@@ -3,6 +3,8 @@ import { sceneManager } from '../core/SceneManager.js';
 import { Player } from '../entities/player/Player.js';
 import { ROOM_TEMPLATES } from '../systems/rooms/RoomTemplates.js';
 import { DoorSystem } from '../systems/rooms/DoorSystem.js';
+import { HealthBar } from '../ui/hud/HealthBar.js';
+import { AmmoBar } from '../ui/hud/AmmoBar.js';
 
 export class SectorScene extends Phaser.Scene {
     constructor() {
@@ -15,6 +17,7 @@ export class SectorScene extends Phaser.Scene {
     }
 
     create() {
+
         this.scene.resume();
         this.physics.world.resume();
         this.physics.world.timeScale = 1;
@@ -68,6 +71,8 @@ export class SectorScene extends Phaser.Scene {
             1
         );
         this.player.setDepth(10);
+
+        this.createHUD();
 
         const showColliders = false;
         this.walls = this.physics.add.staticGroup();
@@ -173,6 +178,46 @@ export class SectorScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
         this.loadRoomByIndex(0, 'left');
     }
+    shoot() {
+    // ... tu código de disparo
+    if (this.ammoBar) {
+        this.ammoBar.shoot();
+    }
+    }
+    receiveHit(damage) {
+    this.stats.health -= damage;
+    if (this.healthBar) {
+        this.healthBar.takeDamage(damage);
+    }
+    }
+
+// Cuando el jugador recarga:
+    reload() {
+    if (this.ammoBar) {
+        this.ammoBar.reload();
+    }
+    }
+
+    createHUD() {
+    // Barra de vida del jugador
+    this.healthBar = new HealthBar(
+        this,
+        120,  // x position
+        30,   // y position
+        this.player.stats?.maxHealth || 100  // max health
+    );
+    this.healthBar.setHealth(this.player.stats?.health || 100);
+    
+    // Barra de munición
+    this.ammoBar = new AmmoBar(
+        this,
+        120,  // x position
+        70,   // y position (debajo de la barra de vida)
+        this.player.stats?.maxAmmo || 30,     // max ammo
+        this.player.stats?.currentAmmo || 30  // current ammo
+    );
+    }
+
 
     loadRoomByIndex(index, playerStartSide = 'left') {
         const roomId = this.roomSequence[index];
@@ -514,10 +559,16 @@ export class SectorScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-        this.player.update();
-        this.updateEnemies(delta);
-        this.doorSystem.update(delta / 1000);
-        this.checkDoorEntry();
+    this.player.update();
+    this.updateEnemies(delta);
+    this.doorSystem.update(delta / 1000);
+    this.checkDoorEntry();
+    this.updateHUD();
+        // Detectar pausa
+        if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+        this.scene.pause();
+        this.scene.launch('PauseMenu');
+        }
     }
 
     updateEnemies() {
@@ -946,4 +997,16 @@ export class SectorScene extends Phaser.Scene {
         this.currentRoomIndex -= 1;
         this.loadRoomByIndex(this.currentRoomIndex, 'right');
     }
+
+    updateHUD() {
+    if (this.healthBar && this.player.stats) {
+        this.healthBar.setHealth(this.player.stats.health);
+    }
+    
+    if (this.ammoBar && this.player.stats) {
+        this.ammoBar.setAmmo(this.player.stats.currentAmmo);
+    }
+    }
+
+
 }
