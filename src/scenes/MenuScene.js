@@ -24,7 +24,7 @@ export class MenuScene extends Phaser.Scene {
         // 2. BOTÓN PARTIDA (Posicionado un poco más arriba del centro)
         this.createMenuButton(centerX, centerY - 40, 'Partida', () => {
             console.log("Iniciando partida...");
-            sceneManager.go(this, 'SectorScene');
+            sceneManager.go(this, 'PreloadScene', { nextScene: 'SectorScene' });
         });
 
         // 3. BOTÓN SALIR (Posicionado 60 píxeles debajo del de partida)

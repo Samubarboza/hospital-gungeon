@@ -9,7 +9,11 @@ export const ROOM_TEMPLATES = {
     width: 800,
     height: 600,
     backgroundColor: '#1a1a2e',
-    enemies: [],
+    enemies: [
+      { x: 380, y: 220, type: 'basic', hp: 30 },
+      { x: 300, y: 360, type: 'basic', hp: 30 },
+      { x: 500, y: 360, type: 'basic', hp: 30 }
+    ],
     doors: [
       { 
         x: 775, 
