@@ -1,17 +1,30 @@
-import NarrativeSystem from './NarrativeSystem.js';
+// triggers.js
+// Manejo de eventos que disparan narrativas
 
-export default class Triggers {
-    constructor(narrativeSystem) {
-        this.narrativeSystem = narrativeSystem;
-    }
+import { obtenerNarrativa } from "./narrative.system.js";
 
-    checkTrigger(event) { 
-        switch(event) {
-            case 'playerEnterHospital':
-                this.narrativeSystem.startDialogue('intro');
-                break;
-            default:
-                console.log(\`No hay trigger para: \${event}\`);
-        }
-    }
+function triggerEvento(evento) {
+  switch (evento) {
+    case "inicio":
+      console.log(obtenerNarrativa("inicio"));
+      break;
+    case "colision":
+      console.log("¡Has chocado con un enemigo!");
+      break;
+    case "item":
+      console.log("Has recogido un objeto.");
+      break;
+    case "victoria":
+      console.log(obtenerNarrativa("victoria"));
+      break;
+    case "derrota":
+      console.log(obtenerNarrativa("derrota"));
+      break;
+    default:
+      console.log("Evento no reconocido.");
+  }
 }
+
+// Ejemplo de uso
+triggerEvento("inicio");
+triggerEvento("victoria");
