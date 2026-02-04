@@ -8,14 +8,17 @@ export class PlayerStats {
         this.isDead = false;
 
         // --- Atributos de munición ---
-        this.maxAmmo = 100;
-        this.currentAmmo = 100;
+        this.maxAmmo = 10;
+        this.currentAmmo = 10;
         this.isReloading = false;
         this.shotCount = 1;
         this.shotSpread = 0;
         this.ammoPerShot = 1;
         this.meleeDamage = 25;    // Daño del golpe físico
         this.isAttacking = false; // Interruptor para ataque
+        this.isInvulnerable = false; // El nuevo escudo temporal
+        this.isKnockedBack = false;
+
     }
 
     takeDamage(amount) {
