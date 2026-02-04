@@ -1,21 +1,26 @@
 // src/entities/player/PlayerStats.js
+import { PLAYER_BASE_STATS, getDifficultyConfig } from '../../core/DifficultyConfig.js';
 export class PlayerStats {
-    constructor() {
-        this.health = 100;
-        this.maxHealth = 100;
-        this.speed = 200;
-        this.damage = 10;
+    constructor(difficultyConfig = null) {
+        const config = difficultyConfig || getDifficultyConfig();
+        const playerTuning = config.player;
+        const damageTuning = config.damage;
+
+        this.maxHealth = Math.round(PLAYER_BASE_STATS.health * playerTuning.healthMultiplier);
+        this.health = this.maxHealth;
+        this.speed = PLAYER_BASE_STATS.speed * playerTuning.speedMultiplier;
+        this.damage = Math.round(PLAYER_BASE_STATS.damage * playerTuning.damageMultiplier * damageTuning.playerMultiplier);
         this.isDead = false;
-        this.runMultiplier = 1.6;
+        this.runMultiplier = PLAYER_BASE_STATS.runMultiplier;
 
         // --- Atributos de munición ---
-        this.maxAmmo = 10;
-        this.currentAmmo = 10;
+        this.maxAmmo = Math.max(1, Math.round(PLAYER_BASE_STATS.maxAmmo * playerTuning.ammoMultiplier));
+        this.currentAmmo = this.maxAmmo;
         this.isReloading = false;
         this.shotCount = 1;
         this.shotSpread = 0;
         this.ammoPerShot = 1;
-        this.meleeDamage = 25;    // Daño del golpe físico
+        this.meleeDamage = Math.round(PLAYER_BASE_STATS.meleeDamage * playerTuning.meleeDamageMultiplier);    // Daño del golpe físico
         this.isAttacking = false; // Interruptor para ataque
         this.isInvulnerable = false; // El nuevo escudo temporal
         this.isKnockedBack = false;

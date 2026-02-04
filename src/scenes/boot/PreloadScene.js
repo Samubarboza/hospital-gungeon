@@ -1,3 +1,5 @@
+import { ensureDifficulty } from '../../core/DifficultyConfig.js';
+
 const ENEMY_VARIANTS = [
     { id: 'alien1', prefix: 'Wraith_01' },
     { id: 'alien2', prefix: 'Wraith_02' },
@@ -109,6 +111,7 @@ export default class PreloadScene extends Phaser.Scene {
         this.onLoadProgress = null;
         this.onLoadComplete = null;
         this.onLoadError = null;
+        ensureDifficulty(this);
     }
 
     preload() {

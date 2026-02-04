@@ -1,3 +1,5 @@
+import { getDifficultyConfig, BOSS_BASE_STATS } from '../../../core/DifficultyConfig.js';
+
 const AI_TUNING = {
     detectionRange: 420,
     walker: { speedMin: 190, speedMax: 230, damage: 16, attackRange: 80, attackCooldown: 480 },
@@ -123,14 +125,20 @@ export function createEnemySystem(scene) {
     }
 
     function spawnBoss(x, y, config = {}) {
+        const difficulty = getDifficultyConfig(scene);
+        const bossTuning = difficulty.boss;
         const textureKey = `${scene.bossId}-idle-000`;
         const boss = scene.physics.add.sprite(x, y, textureKey);
         boss.setOrigin(0.5, 1);
         boss.setData('isBoss', true);
         boss.setData('state', 'idle');
         boss.setData('variant', scene.bossId);
-        boss.setData('hp', config.hp ?? 900);
-        boss.setData('speed', config.speed ?? 130);
+        const baseHealth = config.hp ?? BOSS_BASE_STATS.health;
+        const baseSpeed = config.speed ?? BOSS_BASE_STATS.speed;
+        const baseDamage = config.damage ?? BOSS_BASE_STATS.damage;
+        boss.setData('hp', Math.round(baseHealth * bossTuning.healthMultiplier));
+        boss.setData('speed', baseSpeed * bossTuning.speedMultiplier);
+        boss.setData('damage', Math.round(baseDamage * bossTuning.damageMultiplier));
         boss.setData('isDying', false);
         boss.setData('nextActionAt', scene.time.now + 800);
         boss.setData('nextEmoteAt', scene.time.now + 1500);
@@ -171,7 +179,8 @@ export function createEnemySystem(scene) {
                 playBossAction(boss, melee);
             }
             boss.setData('nextHitAt', now + 650);
-            scene.player.receiveHit(20);
+            const bossDamage = boss.getData('damage') ?? BOSS_BASE_STATS.damage;
+            scene.player.receiveHit(bossDamage);
         }
 
         if (dist > 320 && now >= nextJumpAt) {

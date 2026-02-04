@@ -1,5 +1,6 @@
 import { sceneManager } from '../../core/SceneManager.js';
 import { eventBus } from '../../core/EventBus.js';
+import { setDifficulty, DIFFICULTY_KEYS } from '../../core/DifficultyConfig.js';
 
 export class MenuScene extends Phaser.Scene {
     constructor() {
@@ -22,15 +23,26 @@ export class MenuScene extends Phaser.Scene {
         const centerX = width / 2;
         const centerY = height / 2;
 
-        // 2. BOTÓN PARTIDA (Posicionado un poco más arriba del centro)
-        this.createMenuButton(centerX, centerY - 40, 'Partida', () => {
+        this.add.text(centerX, centerY - 140, 'Selecciona dificultad', {
+            fontSize: '22px',
+            color: '#ffffff',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        const startGameWithDifficulty = (difficultyKey) => {
+            setDifficulty(this, difficultyKey);
             eventBus.emit('game:start');
             sceneManager.go(this, 'PreloadScene', { nextScene: 'NarrativeScene', showLoader: true });
-        });
+        };
 
-        // 3. BOTÓN SALIR (Posicionado 60 píxeles debajo del de partida)
-        this.createMenuButton(centerX, centerY + 40, 'Salir', () => {
-            window.location.reload(); 
+        const gap = 70;
+        this.createMenuButton(centerX, centerY - 40, 'Facil', () => startGameWithDifficulty(DIFFICULTY_KEYS.EASY));
+        this.createMenuButton(centerX, centerY - 40 + gap, 'Medio', () => startGameWithDifficulty(DIFFICULTY_KEYS.MEDIUM));
+        this.createMenuButton(centerX, centerY - 40 + gap * 2, 'Dificil', () => startGameWithDifficulty(DIFFICULTY_KEYS.HARD));
+
+        this.createMenuButton(centerX, centerY - 40 + gap * 3 + 10, 'Salir', () => {
+            window.location.reload();
         });
     }
 

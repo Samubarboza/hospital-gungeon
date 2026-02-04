@@ -2,6 +2,7 @@
 import { PlayerController } from './PlayerController.js';
 import { PlayerStats } from './PlayerStats.js';
 import { Bullet } from './bullet.js';
+import { getDifficultyConfig } from '../../core/DifficultyConfig.js';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, scale = 1) {
@@ -21,7 +22,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.displayHeight - bodyHeight
     );
 
-    this.stats = new PlayerStats();
+    this.stats = new PlayerStats(getDifficultyConfig(scene));
     this.controller = new PlayerController(scene, this);
 
     this.bullets = scene.physics.add.group({

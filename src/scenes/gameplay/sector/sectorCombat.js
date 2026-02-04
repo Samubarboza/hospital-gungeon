@@ -1,3 +1,5 @@
+import { getDifficultyConfig, CONTACT_DAMAGE_BASE } from '../../../core/DifficultyConfig.js';
+
 export function createCombatSystem(scene, enemySystem) {
     const applyDamageToEnemy = (enemy, damage) => {
         if (!enemy || damage <= 0) return;
@@ -36,6 +38,7 @@ export function createCombatSystem(scene, enemySystem) {
         const lastHit = enemy.getData('lastHit') || 0;
         if (now - lastHit < 400) return;
         enemy.setData('lastHit', now);
+        const difficulty = getDifficultyConfig(scene);
         if (enemy.getData('isBoss')) {
             const nextAttackAt = enemy.getData('nextAttackAt') || 0;
             if (now >= nextAttackAt) {
@@ -43,7 +46,9 @@ export function createCombatSystem(scene, enemySystem) {
                 enemySystem.playBossAction(enemy, Phaser.Utils.Array.GetRandom(melee));
                 enemy.setData('nextAttackAt', now + 700);
             }
-            player.receiveHit(20, enemy);
+            const bossBaseDamage = enemy.getData('damage') ?? CONTACT_DAMAGE_BASE.boss;
+            const bossDamage = Math.round(bossBaseDamage * difficulty.boss.damageMultiplier);
+            player.receiveHit(bossDamage, enemy);
             return;
         }
         const nextAttackAt = enemy.getData('nextAttackAt') || 0;
@@ -51,7 +56,9 @@ export function createCombatSystem(scene, enemySystem) {
             enemySystem.playEnemyAction(enemy, 'attack');
             enemy.setData('nextAttackAt', now + 700);
         }
-        player.receiveHit(10, enemy);
+        const enemyBaseDamage = CONTACT_DAMAGE_BASE.enemy;
+        const enemyDamage = Math.round(enemyBaseDamage * difficulty.enemy.damageMultiplier * difficulty.damage.enemyMultiplier);
+        player.receiveHit(enemyDamage, enemy);
     };
 
     const handleMeleeHits = () => {

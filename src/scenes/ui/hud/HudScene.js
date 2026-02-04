@@ -1,3 +1,5 @@
+import { getDifficultyLabel } from '../../../core/DifficultyConfig.js';
+
 export class HudScene extends Phaser.Scene {
     constructor() {
         super('HudScene');
@@ -10,7 +12,7 @@ export class HudScene extends Phaser.Scene {
 
     create() {
         const panelWidth = 260;
-        const panelHeight = 72;
+        const panelHeight = 94;
         const padding = 16;
 
         this.panel = this.add.rectangle(padding, padding, panelWidth, panelHeight, 0x0b0b1d, 0.75)
@@ -36,6 +38,12 @@ export class HudScene extends Phaser.Scene {
             color: '#c7c7ff'
         }).setOrigin(0, 0).setScrollFactor(0);
 
+        this.difficultyText = this.add.text(padding + 12, padding + 60, `Difficulty: ${getDifficultyLabel(this)}`, {
+            fontFamily: 'Arial',
+            fontSize: '13px',
+            color: '#9fd1ff'
+        }).setOrigin(0, 0).setScrollFactor(0);
+
         this.refresh();
     }
 
@@ -56,5 +64,8 @@ export class HudScene extends Phaser.Scene {
         const ammo = stats.currentAmmo ?? 0;
         const maxAmmo = stats.maxAmmo ?? 0;
         this.ammoText.setText(`Ammo: ${ammo} / ${maxAmmo}`);
+        if (this.difficultyText) {
+            this.difficultyText.setText(`Difficulty: ${getDifficultyLabel(this)}`);
+        }
     }
 }

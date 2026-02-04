@@ -2,6 +2,7 @@ import { eventBus } from '../../../core/EventBus.js';
 import { sceneManager } from '../../../core/SceneManager.js';
 import { ROOM_TEMPLATES } from '../../../systems/rooms/RoomTemplates.js';
 import { DoorSystem } from '../../../systems/rooms/DoorSystem.js';
+import { getDifficultyConfig } from '../../../core/DifficultyConfig.js';
 
 export function createRoomSystem(scene, enemySystem) {
     const roomSystem = {
@@ -103,7 +104,15 @@ export function createRoomSystem(scene, enemySystem) {
             medium: { total: 20, perWave: 4, maxAlive: 10, delayMs: 1000 },
             boss: { total: 1, perWave: 1, maxAlive: 1, delayMs: 1200 }
         };
-        return defaults[roomId] ?? { total: template.enemies.length * 3, perWave: 3, maxAlive: 8, delayMs: 1100 };
+        const baseConfig = defaults[roomId] ?? { total: template.enemies.length * 3, perWave: 3, maxAlive: 8, delayMs: 1100 };
+        const difficulty = getDifficultyConfig(scene);
+        const spawnTuning = difficulty.spawn;
+        return {
+            total: Math.max(1, Math.round(baseConfig.total * spawnTuning.maxAliveMultiplier)),
+            perWave: Math.max(1, Math.round(baseConfig.perWave * spawnTuning.perWaveMultiplier)),
+            maxAlive: Math.max(1, Math.round(baseConfig.maxAlive * spawnTuning.maxAliveMultiplier)),
+            delayMs: Math.max(200, Math.round(baseConfig.delayMs * spawnTuning.delayMultiplier))
+        };
     }
 
     function buildSpawnQueue(template, totalCount) {

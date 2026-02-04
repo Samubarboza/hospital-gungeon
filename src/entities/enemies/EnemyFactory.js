@@ -1,6 +1,7 @@
 import Walker from './types/Walker.js';
 import Shooter from './types/Shooter.js';
 import Hybrid from './types/Hybrid.js';
+import { getDifficultyConfig } from '../../core/DifficultyConfig.js';
 
 /**
  * Factory para crear enemigos de diferentes tipos
@@ -111,9 +112,22 @@ export default class EnemyFactory {
      */
     create(type, x, y, config = {}) {
         let enemy = null;
-        const difficulty = config.difficulty || this.defaultDifficulty;
-        const baseConfig = this.getConfigForDifficulty(type, difficulty);
+        const difficultyKey = config.difficulty || this.defaultDifficulty;
+        const baseConfig = this.getConfigForDifficulty(type, difficultyKey);
         const finalConfig = { ...baseConfig, ...config };
+        const difficultyConfig = getDifficultyConfig(this.scene);
+        const enemyTuning = difficultyConfig.enemy;
+        const damageTuning = difficultyConfig.damage;
+
+        if (finalConfig.health !== undefined) {
+            finalConfig.health = Math.round(finalConfig.health * enemyTuning.healthMultiplier);
+        }
+        if (finalConfig.damage !== undefined) {
+            finalConfig.damage = Math.round(finalConfig.damage * enemyTuning.damageMultiplier * damageTuning.enemyMultiplier);
+        }
+        if (finalConfig.speed !== undefined) {
+            finalConfig.speed = finalConfig.speed * enemyTuning.speedMultiplier;
+        }
         
         switch(type.toLowerCase()) {
             case EnemyFactory.TYPES.WALKER:
