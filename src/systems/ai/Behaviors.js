@@ -557,14 +557,7 @@ export class MeleeAttackBehavior {
                 player.body &&
                 Phaser.Geom.Intersects.RectangleToRectangle(this.enemy.body, player.body)
             );
-        if (!overlapping) {
-            const dist = typeof this.enemy.getDistanceToPlayer === 'function'
-                ? this.enemy.getDistanceToPlayer()
-                : distanceBetween(this.enemy, player);
-            const attackRange = this.enemy.config?.attackRange ?? 0;
-            const contactRange = Math.max(18, Math.min(50, attackRange * 0.6));
-            if (dist > contactRange) return;
-        }
+        if (!overlapping) return;
 
         const now = this.enemy.scene.time.now;
         if (now - this.lastAttackTime < this.cooldown) return;
@@ -572,7 +565,7 @@ export class MeleeAttackBehavior {
         this.lastAttackTime = now;
         this.enemy.isAttacking = true;
         if (typeof player.receiveHit === 'function') {
-            player.receiveHit(this.damage);
+            player.receiveHit(this.damage, this.enemy);
         }
         this.enemy.scene.time.delayedCall(150, () => {
             if (this.enemy.active) {
@@ -600,7 +593,7 @@ export class RangedAttackBehavior {
 
         this.lastAttackTime = now;
         if (typeof player.receiveHit === 'function') {
-            player.receiveHit(this.damage);
+            player.receiveHit(this.damage, this.enemy);
         }
     }
 }

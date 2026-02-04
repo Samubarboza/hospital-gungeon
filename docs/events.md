@@ -14,7 +14,7 @@ No se inventan eventos nuevos sin aprobación.
 ## Quién emite / quién escucha
 
 ### game:start
-- Emite: Start
+- Emite: Start, MenuScene
 - Escucha: RunManager
 
 ### hub:continue

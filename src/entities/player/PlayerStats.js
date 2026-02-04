@@ -6,6 +6,7 @@ export class PlayerStats {
         this.speed = 200;
         this.damage = 10;
         this.isDead = false;
+        this.runMultiplier = 1.6;
 
         // --- Atributos de munición ---
         this.maxAmmo = 10;
@@ -26,12 +27,9 @@ export class PlayerStats {
 
         this.health -= amount; // RESTAMOS UNA SOLA VEZ
         
-        console.log("Vida actual:", this.health);
-
         if (this.health <= 0) {
             this.health = 0;
             this.isDead = true; // ¡Marcamos la muerte!
-            console.log("¡PERSONAJE MUERTO!");
         }
     }
 
@@ -42,6 +40,5 @@ export class PlayerStats {
         if (this.health > this.maxHealth) {
             this.health = this.maxHealth;
         }
-        console.log("Vida tras curación:", this.health);
     }
 }

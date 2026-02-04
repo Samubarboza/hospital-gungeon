@@ -1,0 +1,11 @@
+﻿{
+  "id": "intro",
+  "title": "Hospital",
+  "lines": [
+    "La noche cae sobre el hospital.",
+    "Las luces parpadean y los pasillos estan vacios.",
+    "Eres el ultimo en pie.",
+    "Sobrevive y encuentra la salida."
+  ],
+  "hint": "Presiona ENTER o haz click para continuar"
+}

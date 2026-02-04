@@ -5,7 +5,8 @@ export class PlayerController {
         this.facing = 'down';
 
         this.cursors = this.scene.input.keyboard.createCursorKeys();
-        this.keys = this.scene.input.keyboard.addKeys('W,A,S,D,R,SPACE,K');
+        this.keys = this.scene.input.keyboard.addKeys('W,A,S,D,R,SPACE');
+        this.shiftKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
         this.scene.input.on('pointerdown', (pointer) => {
             if (pointer.leftButtonDown()) {
                 this.handleShoot();
@@ -26,7 +27,6 @@ export class PlayerController {
     // 3. PROCESAR INPUTS (R, SPACE, K)
     if (Phaser.Input.Keyboard.JustDown(this.keys.R)) this.handleReload();
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.handleMelee();
-    if (Phaser.Input.Keyboard.JustDown(this.keys.K)) this.player.receiveHit(20);
 
     // 4. ANIMACIONES (Al final, y solo si no está haciendo algo importante)
     this.handleAnimations();
@@ -69,7 +69,6 @@ handleShoot() {
         if (fired > 0) {
             // Reducción de munición
             stats.currentAmmo = Math.max(stats.currentAmmo - (stats.ammoPerShot || 1), 0);
-            console.log(`Balas restantes: ${stats.currentAmmo}`);
 
             // 3. ANIMACIÓN DE DISPARO (EL CAMBIO CLAVE)
             const moving = this.player.body.velocity.lengthSq() > 1;
@@ -83,7 +82,6 @@ handleShoot() {
 
             // --- RECARGA AUTOMÁTICA ---
             if (stats.currentAmmo === 0) {
-                console.log("¡Cargador vacío! Recargando...");
                 this.handleReload();
             }
         }
@@ -99,13 +97,10 @@ handleShoot() {
         if (stats.isReloading || stats.currentAmmo === stats.maxAmmo) return;
 
         stats.isReloading = true;
-        console.log("Recargando...");
-
         this.scene.time.delayedCall(1500, () => {
             if (!this.player.active) return;
             stats.currentAmmo = stats.maxAmmo;
             stats.isReloading = false;
-            console.log("¡Recarga lista!");
         });
     }
 
@@ -118,20 +113,26 @@ handleMelee() {
 
     // Marcamos que está atacando
     this.player.stats.isAttacking = true;
+    this.player.meleeActiveUntil = this.scene.time.now + 220;
+    this.player.meleeHitIds = new Set();
     
     // Ejecutamos la única animación de ataque
     const actionKey = 'player-slash'; 
     this.player.anims.play(actionKey, true);
-    console.log("¡Ataque cuerpo a cuerpo ejecutado!");
-
     // DESBLOQUEO: Tras 300ms puede volver a caminar normal o atacar
     this.scene.time.delayedCall(300, () => {
         if (this.player.stats) this.player.stats.isAttacking = false;
+        if (this.player) {
+            this.player.meleeActiveUntil = 0;
+        }
     });
 }
 
     handleMovement() {
-        const { speed } = this.player.stats;
+        const runMultiplier = this.player.stats.runMultiplier ?? 1.6;
+        const speed = this.shiftKey?.isDown
+            ? this.player.stats.speed * runMultiplier
+            : this.player.stats.speed;
         let vx = 0; let vy = 0;
         if (this.cursors.left.isDown || this.keys.A.isDown) vx = -speed;
         else if (this.cursors.right.isDown || this.keys.D.isDown) vx = speed;
@@ -202,37 +203,4 @@ handleMelee() {
         return true;
     }
 
-    playJumpAttack() {
-        if (!this.scene.anims.exists('player-jumpStart')) return false;
-        this.player.isBusy = true;
-        this.player.anims.play('player-jumpStart', true);
-        this.player.once('animationcomplete-player-jumpStart', () => {
-            if (!this.player.active) return;
-            if (this.scene.anims.exists('player-jumpLoop')) this.player.anims.play('player-jumpLoop', true);
-            this.scene.time.delayedCall(350, () => {
-                if (!this.player.active) return;
-                const airAction = this.scene.anims.exists('player-slashAir') ? 'player-slashAir' : this.scene.anims.exists('player-throwAir') ? 'player-throwAir' : null;
-                if (airAction) {
-                    this.player.anims.play(airAction, true);
-                    this.player.once(`animationcomplete-${airAction}`, () => this.finishJump());
-                } else this.finishJump();
-            });
-        });
-        return true;
-    }
-
-    finishJump() {
-        if (!this.player.active) return;
-        if (this.scene.anims.exists('player-fall')) {
-            this.player.anims.play('player-fall', true);
-            this.player.once('animationcomplete-player-fall', () => {
-                if (!this.player.active) return;
-                this.player.isBusy = false;
-                this.player.stats.isAttacking = false;
-            });
-            return;
-        }
-        this.player.isBusy = false;
-        this.player.stats.isAttacking = false;
-    }
 }

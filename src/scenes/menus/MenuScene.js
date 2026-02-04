@@ -1,4 +1,5 @@
-import { sceneManager } from '../core/SceneManager.js';
+import { sceneManager } from '../../core/SceneManager.js';
+import { eventBus } from '../../core/EventBus.js';
 
 export class MenuScene extends Phaser.Scene {
     constructor() {
@@ -23,13 +24,12 @@ export class MenuScene extends Phaser.Scene {
 
         // 2. BOTÓN PARTIDA (Posicionado un poco más arriba del centro)
         this.createMenuButton(centerX, centerY - 40, 'Partida', () => {
-            console.log("Iniciando partida...");
-            sceneManager.go(this, 'PreloadScene', { nextScene: 'SectorScene' });
+            eventBus.emit('game:start');
+            sceneManager.go(this, 'PreloadScene', { nextScene: 'NarrativeScene', showLoader: true });
         });
 
         // 3. BOTÓN SALIR (Posicionado 60 píxeles debajo del de partida)
         this.createMenuButton(centerX, centerY + 40, 'Salir', () => {
-            console.log("Saliendo...");
             window.location.reload(); 
         });
     }

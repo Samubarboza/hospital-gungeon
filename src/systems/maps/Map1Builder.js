@@ -1,14 +1,15 @@
-import { MAP1_LAYOUT } from './Map1Layout.js';
+import { TILE_SIZE, buildRectLayout } from './Map1Layout.js';
 
 export function buildMap1(scene) {
-    const { tileSize, width, height, layers } = MAP1_LAYOUT;
+    const tileSize = TILE_SIZE;
+    const tilesWide = Math.max(8, Math.ceil(scene.scale.width / tileSize));
+    const tilesHigh = Math.max(6, Math.ceil(scene.scale.height / tileSize));
+    const { width, height, layers } = buildRectLayout(tilesWide, tilesHigh);
     const pixelWidth = width * tileSize;
     const pixelHeight = height * tileSize;
 
-    const scale = Math.min(
-        scene.scale.width / pixelWidth,
-        scene.scale.height / pixelHeight
-    );
+    const scaleX = scene.scale.width / pixelWidth;
+    const scaleY = scene.scale.height / pixelHeight;
 
     const map = scene.make.tilemap({
         tileWidth: tileSize,
@@ -17,9 +18,7 @@ export function buildMap1(scene) {
         height
     });
 
-    const floorSet = map.addTilesetImage('map1-walls-floor', 'map1-walls-floor', tileSize, tileSize, 0, 0);
-    const waterSet = map.addTilesetImage('map1-water', 'map1-water', tileSize, tileSize, 0, 0);
-    const objectSet = map.addTilesetImage('map1-objects', 'map1-objects', tileSize, tileSize, 0, 0);
+    const floorSet = map.addTilesetImage('rect-tiles', 'rect-tiles', tileSize, tileSize, 0, 0);
 
     const floorLayer = map.createBlankLayer('floor', floorSet, 0, 0);
     floorLayer.putTilesAt(layers.floor, 0, 0);
@@ -27,23 +26,26 @@ export function buildMap1(scene) {
     const wallLayer = map.createBlankLayer('walls', floorSet, 0, 0);
     wallLayer.putTilesAt(layers.walls, 0, 0);
 
-    const waterLayer = map.createBlankLayer('water', waterSet, 0, 0);
-    waterLayer.putTilesAt(layers.water, 0, 0);
-
-    const propsLayer = map.createBlankLayer('props', objectSet, 0, 0);
-    propsLayer.putTilesAt(layers.props, 0, 0);
+    let waterLayer = null;
+    let propsLayer = null;
+    if (layers.water) {
+        waterLayer = map.createBlankLayer('water', floorSet, 0, 0);
+        waterLayer.putTilesAt(layers.water, 0, 0);
+    }
+    if (layers.props) {
+        propsLayer = map.createBlankLayer('props', floorSet, 0, 0);
+        propsLayer.putTilesAt(layers.props, 0, 0);
+    }
 
     floorLayer.setDepth(0);
-    waterLayer.setDepth(1);
+    if (waterLayer) waterLayer.setDepth(1);
     wallLayer.setDepth(2);
-    propsLayer.setDepth(3);
+    if (propsLayer) propsLayer.setDepth(3);
 
-    if (scale !== 1) {
-        floorLayer.setScale(scale);
-        waterLayer.setScale(scale);
-        wallLayer.setScale(scale);
-        propsLayer.setScale(scale);
-    }
+    floorLayer.setScale(scaleX, scaleY);
+    if (waterLayer) waterLayer.setScale(scaleX, scaleY);
+    wallLayer.setScale(scaleX, scaleY);
+    if (propsLayer) propsLayer.setScale(scaleX, scaleY);
 
     return {
         map,
@@ -53,8 +55,8 @@ export function buildMap1(scene) {
             wallLayer,
             propsLayer
         },
-        scale,
-        pixelWidth: pixelWidth * scale,
-        pixelHeight: pixelHeight * scale
+        scale: { x: scaleX, y: scaleY },
+        pixelWidth: pixelWidth * scaleX,
+        pixelHeight: pixelHeight * scaleY
     };
 }

@@ -4,6 +4,8 @@
 
 Start
  → Menu
+ → Preload
+ → Narrative
  → Hub
  → Sector (ER)
  → Hub

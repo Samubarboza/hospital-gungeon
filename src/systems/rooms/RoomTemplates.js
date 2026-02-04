@@ -30,10 +30,7 @@ export const ROOM_TEMPLATES = {
       { x: 780, y: 0, width: 20, height: 275 },
       { x: 780, y: 325, width: 20, height: 275 }
     ],
-    obstacles: [
-      { x: 200, y: 200, width: 100, height: 100 },
-      { x: 500, y: 300, width: 100, height: 100 }
-    ]
+    obstacles: []
   },
 
   easy: {
@@ -69,10 +66,7 @@ export const ROOM_TEMPLATES = {
       { x: 780, y: 0, width: 20, height: 275 },
       { x: 780, y: 325, width: 20, height: 275 }
     ],
-    obstacles: [
-      { x: 150, y: 150, width: 80, height: 80 },
-      { x: 550, y: 350, width: 80, height: 80 }
-    ]
+    obstacles: []
   },
 
   medium: {
@@ -109,11 +103,7 @@ export const ROOM_TEMPLATES = {
       { x: 780, y: 0, width: 20, height: 275 },
       { x: 780, y: 325, width: 20, height: 275 }
     ],
-    obstacles: [
-      { x: 200, y: 100, width: 60, height: 60 },
-      { x: 400, y: 450, width: 60, height: 60 },
-      { x: 600, y: 250, width: 60, height: 60 }
-    ]
+    obstacles: []
   },
 
   boss: {
@@ -141,11 +131,6 @@ export const ROOM_TEMPLATES = {
       { x: 0, y: 325, width: 20, height: 275 },
       { x: 780, y: 0, width: 20, height: 600 }
     ],
-    obstacles: [
-      { x: 100, y: 100, width: 100, height: 100 },
-      { x: 600, y: 100, width: 100, height: 100 },
-      { x: 100, y: 400, width: 100, height: 100 },
-      { x: 600, y: 400, width: 100, height: 100 }
-    ]
+    obstacles: []
   }
 };

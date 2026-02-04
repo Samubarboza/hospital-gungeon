@@ -52,8 +52,10 @@ export default class EnemyBase extends Phaser.Physics.Arcade.Sprite {
                 this.body.setSize(this.config.bodySize.width, this.config.bodySize.height);
                 this.body.setOffset(this.config.bodySize.offsetX ?? 0, this.config.bodySize.offsetY ?? 0);
             } else {
-                const bodyWidth = this.displayWidth * 0.7;
-                const bodyHeight = this.displayHeight * 0.7;
+                const scaleX = this.config.bodyScaleX ?? this.config.bodyScale ?? 0.55;
+                const scaleY = this.config.bodyScaleY ?? this.config.bodyScale ?? 0.55;
+                const bodyWidth = this.displayWidth * scaleX;
+                const bodyHeight = this.displayHeight * scaleY;
                 this.body.setSize(bodyWidth, bodyHeight);
                 this.body.setOffset(
                     (this.displayWidth - bodyWidth) / 2,
@@ -129,12 +131,14 @@ export default class EnemyBase extends Phaser.Physics.Arcade.Sprite {
      */
     isPlayerOverlapping() {
         if (!this.player || !this.body || !this.player.body) return false;
-        const pad = this.config.attackOverlapPadding ?? 4;
+        const pad = this.config.attackOverlapPadding ?? -6;
+        const width = Math.max(this.body.width + pad * 2, 2);
+        const height = Math.max(this.body.height + pad * 2, 2);
         const enemyRect = {
             x: this.body.x - pad,
             y: this.body.y - pad,
-            width: this.body.width + pad * 2,
-            height: this.body.height + pad * 2
+            width,
+            height
         };
         const playerRect = {
             x: this.player.body.x,

@@ -31,7 +31,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
 
     this.isBusy = false;
-    this.invulnerableUntil = 0;
+    this.meleeActiveUntil = 0;
+    this.meleeHitIds = new Set();
     this.setData('nextIdleBlinkAt', scene.time.now + Phaser.Math.Between(2000, 5000));
     this.setData('nextEmoteAt', scene.time.now + Phaser.Math.Between(3000, 7000));
   }
@@ -68,13 +69,12 @@ receiveHit(damage, attacker = null) {
     if (attacker && !this.stats.isDead) {
         // Calculamos la dirección opuesta al atacante
         const angle = Phaser.Math.Angle.Between(attacker.x, attacker.y, this.x, this.y);
-        const force = 800; // Ajusta este número para más o menos "peso"
+        const force = 120; // Ajusta este número para más o menos "peso"
         
         this.setVelocity(Math.cos(angle) * force, Math.sin(angle) * force);
-        console.log(this.body.velocity.x)
     }
     this.stats.isKnockedBack = true;
-        this.scene.time.delayedCall(250, () => {
+        this.scene.time.delayedCall(120, () => {
             if (this.stats) this.stats.isKnockedBack = false;
         });
     
@@ -110,7 +110,6 @@ receiveHit(damage, attacker = null) {
 }
 
   die() {
-    console.log("¡PERSONAJE ELIMINADO!");
     this.setVelocity(0, 0);
     this.body.enable = false; 
     this.setTint(0x444444); // Gris de muerte
@@ -119,11 +118,13 @@ receiveHit(damage, attacker = null) {
         this.playAction('player-dying', true);
         this.once('animationcomplete-player-dying', () => {
             if (!this.active) return;
-            this.scene.scene.restart();
+            const sector = this.scene?.sector;
+            this.scene.scene.restart(sector ? { sector } : {});
         });
     } else {
         this.scene.time.delayedCall(3000, () => {
-            this.scene.scene.restart();
+            const sector = this.scene?.sector;
+            this.scene.scene.restart(sector ? { sector } : {});
         });
     }
   }

@@ -1,5 +1,5 @@
-import { eventBus } from '../core/EventBus.js';
-import { sceneManager } from '../core/SceneManager.js';
+import { eventBus } from '../../core/EventBus.js';
+import { sceneManager } from '../../core/SceneManager.js';
 
 export class BossScene extends Phaser.Scene {
     constructor() {

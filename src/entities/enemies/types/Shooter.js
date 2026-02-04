@@ -79,6 +79,10 @@ export default class Shooter extends EnemyBase {
                 'IDLE'
             )
             .transition(
+                Conditions.healthBelow(0.3),
+                'RETREAT'
+            )
+            .transition(
                 Conditions.and(
                     Conditions.playerInAttackRange,
                     (enemy) => {
@@ -108,6 +112,10 @@ export default class Shooter extends EnemyBase {
             .transition(
                 Conditions.playerOutOfDetectionRange,
                 'IDLE'
+            )
+            .transition(
+                Conditions.healthBelow(0.3),
+                'RETREAT'
             )
             .transition(
                 Conditions.playerOutOfAttackRange,
@@ -160,19 +168,6 @@ export default class Shooter extends EnemyBase {
                     Conditions.healthAbove(0.3)
                 ),
                 'POSITION'
-            )
-            
-            // Transiciones especiales desde cualquier estado
-            // Si la salud está baja, huir
-            .state('POSITION')
-            .transition(
-                Conditions.healthBelow(0.3),
-                'RETREAT'
-            )
-            .state('ATTACK')
-            .transition(
-                Conditions.healthBelow(0.3),
-                'RETREAT'
             )
             
             // Establecer estado inicial

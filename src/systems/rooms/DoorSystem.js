@@ -41,7 +41,6 @@ export class DoorSystem {
       return doorObj;
     });
 
-    console.log(`[DoorSystem] ${this.doors.length} puertas inicializadas (top-down)`);
   }
 
   /**
@@ -53,7 +52,6 @@ export class DoorSystem {
       door.openAmount = 0;
     });
     
-    console.log('[DoorSystem] 🔒 TODAS las puertas bloqueadas');
     this.eventBus.emit('doors:locked');
   }
 
@@ -66,7 +64,6 @@ export class DoorSystem {
       door.openAmount = 1;
     });
     
-    console.log('[DoorSystem] 🚪 TODAS las puertas desbloqueadas');
     this.eventBus.emit('doors:unlocked');
   }
 
@@ -85,7 +82,6 @@ export class DoorSystem {
       }
     });
     
-    console.log('[DoorSystem] 🚪 Puertas de AVANCE desbloqueadas');
     this.eventBus.emit('doors:forward_unlocked');
   }
 
@@ -122,7 +118,6 @@ export class DoorSystem {
       };
 
       if (this._isColliding(player, activationZone)) {
-        console.log(`[DoorSystem] ✅ Jugador atravesó puerta ${door.direction} → ${door.leadsTo}`);
         return door;
       }
     }
@@ -243,6 +238,5 @@ export class DoorSystem {
 
   clear() {
     this.doors = [];
-    console.log('[DoorSystem] Puertas limpiadas');
   }
 }

@@ -1,9 +1,13 @@
-import { eventBus } from '../core/EventBus.js';
-import { sceneManager } from '../core/SceneManager.js';
+import { eventBus } from '../../core/EventBus.js';
+import { sceneManager } from '../../core/SceneManager.js';
 
 export class HubScene extends Phaser.Scene {
     constructor() {
         super('HubScene');
+        this.hasEntered = false;
+    }
+
+    init() {
         this.hasEntered = false;
     }
 

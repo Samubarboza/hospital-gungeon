@@ -1,4 +1,4 @@
-import { sceneManager } from '../core/SceneManager.js';
+import { sceneManager } from '../../core/SceneManager.js';
 
 export class EndingScene extends Phaser.Scene {
     constructor() {
