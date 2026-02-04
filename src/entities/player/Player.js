@@ -55,24 +55,59 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  receiveHit(damage) {
-    const now = this.scene.time.now;
-    if (now < this.invulnerableUntil) return;
-    this.invulnerableUntil = now + 450;
+  // src/entities/player/Player.js
 
+receiveHit(damage, attacker = null) {
+    // 1. ESCUDO DE SEGURIDAD: Si es invulnerable o ya murió, ignoramos el golpe
+    if (this.stats.isInvulnerable || this.stats.isDead) return;
+
+    // 2. APLICAR DAÑO
     this.stats.takeDamage(damage);
+
+    // 3. LÓGICA DE REACCIÓN FÍSICA (Knockback)
+    if (attacker && !this.stats.isDead) {
+        // Calculamos la dirección opuesta al atacante
+        const angle = Phaser.Math.Angle.Between(attacker.x, attacker.y, this.x, this.y);
+        const force = 800; // Ajusta este número para más o menos "peso"
+        
+        this.setVelocity(Math.cos(angle) * force, Math.sin(angle) * force);
+        console.log(this.body.velocity.x)
+    }
+    this.stats.isKnockedBack = true;
+        this.scene.time.delayedCall(250, () => {
+            if (this.stats) this.stats.isKnockedBack = false;
+        });
     
+
+    // 4. VERIFICAR MUERTE
     if (this.stats.isDead) {
         this.die();
-    } else {
-        // EFECTO VISUAL: Un solo parpadeo de 200ms para que se note
-        this.setTint(0xff0000); 
-        this.scene.time.delayedCall(200, () => {
-            if (this.active) this.clearTint(); 
-        });
-        this.playAction('player-hurt', false);
+        return;
     }
-  }
+
+    // 5. ESTADO DE INVULNERABILIDAD TEMPORAL
+    this.stats.isInvulnerable = true;
+    
+    // Feedback visual inmediato (Rojo)
+    this.setTint(0xff0000);
+    this.scene.time.delayedCall(200, () => {
+        if (this.active) this.clearTint();
+    });
+
+    // Efecto de parpadeo (Retro) durante la invulnerabilidad
+    const blinkTimer = this.scene.time.addEvent({
+        delay: 100,
+        callback: () => { this.visible = !this.visible; },
+        repeat: 10 // Parpadea durante 1 segundo aprox.
+    });
+
+    // 6. RESTAURACIÓN
+    this.scene.time.delayedCall(1000, () => {
+        this.stats.isInvulnerable = false;
+        this.visible = true; // Aseguramos que sea visible al terminar
+        blinkTimer.remove();
+    });
+}
 
   die() {
     console.log("¡PERSONAJE ELIMINADO!");
