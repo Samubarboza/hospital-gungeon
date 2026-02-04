@@ -1,9 +1,10 @@
+// claves estandar de dificultad
 export const DIFFICULTY_KEYS = {
     EASY: 'easy',
     MEDIUM: 'medium',
     HARD: 'hard'
 };
-
+// estadistica base del jugador - antes de aplicar multiplicadores de dificultad
 export const PLAYER_BASE_STATS = {
     health: 100,
     speed: 200,
@@ -12,18 +13,18 @@ export const PLAYER_BASE_STATS = {
     meleeDamage: 25,
     runMultiplier: 1.6
 };
-
+// dano base por contacto de enemigos y jefe
 export const CONTACT_DAMAGE_BASE = {
     enemy: 10,
     boss: 20
 };
-
+// estado del jefe inicial
 export const BOSS_BASE_STATS = {
     health: 900,
     speed: 130,
     damage: 20
 };
-
+// presets de dificultad con los multijugadores
 const DIFFICULTY_PRESETS = {
     [DIFFICULTY_KEYS.EASY]: {
         key: DIFFICULTY_KEYS.EASY,
@@ -137,7 +138,7 @@ const DIFFICULTY_PRESETS = {
         }
     }
 };
-
+// normaliza texto de dificultad
 export function normalizeDifficulty(key) {
     if (!key) return DIFFICULTY_KEYS.MEDIUM;
     const lowered = String(key).toLowerCase();
@@ -146,7 +147,7 @@ export function normalizeDifficulty(key) {
     if (['medium', 'medio'].includes(lowered)) return DIFFICULTY_KEYS.MEDIUM;
     return DIFFICULTY_KEYS.MEDIUM;
 }
-
+// config de dificultad desde scene.registry
 export function getDifficultyConfig(sceneOrKey) {
     if (sceneOrKey && sceneOrKey.registry) {
         const stored = sceneOrKey.registry.get('difficultyConfig');
@@ -155,7 +156,7 @@ export function getDifficultyConfig(sceneOrKey) {
     const key = typeof sceneOrKey === 'string' ? normalizeDifficulty(sceneOrKey) : DIFFICULTY_KEYS.MEDIUM;
     return DIFFICULTY_PRESETS[key] || DIFFICULTY_PRESETS[DIFFICULTY_KEYS.MEDIUM];
 }
-
+//  Guarda la dificultad elegida y su config en el registry global de la escena
 export function setDifficulty(scene, key) {
     const normalized = normalizeDifficulty(key);
     const config = DIFFICULTY_PRESETS[normalized] || DIFFICULTY_PRESETS[DIFFICULTY_KEYS.MEDIUM];
@@ -166,7 +167,7 @@ export function setDifficulty(scene, key) {
     }
     return config;
 }
-
+// Garantiza que siempre exista una dificultad cargada (usa MEDIUM por defecto)
 export function ensureDifficulty(scene) {
     if (!scene?.registry) return getDifficultyConfig(DIFFICULTY_KEYS.MEDIUM);
     const stored = scene.registry.get('difficulty');
@@ -175,7 +176,7 @@ export function ensureDifficulty(scene) {
     }
     return getDifficultyConfig(scene);
 }
-
+// Obtiene el label visible de dificultad desde registry o usa el default
 export function getDifficultyLabel(scene) {
     if (scene?.registry) {
         const label = scene.registry.get('difficultyLabel');
@@ -183,7 +184,7 @@ export function getDifficultyLabel(scene) {
     }
     return DIFFICULTY_PRESETS[DIFFICULTY_KEYS.MEDIUM].label;
 }
-
+// Devuelve una copia de todos los presets para UI o debug sin exponer el original
 export function getDifficultyPresets() {
     return { ...DIFFICULTY_PRESETS };
 }

@@ -14,7 +14,7 @@ export class PlayerController {
         });
     }
 
-   update() {
+    update() {
     if (!this.player || !this.player.stats) return;
     if (this.player.stats.isDead) return;
 

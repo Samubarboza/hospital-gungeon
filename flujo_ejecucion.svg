@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2d2d2d" />
+    </marker>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 28px; font-weight: 700; fill: #1a1a1a; }
+      .box { fill: #f7f7f9; stroke: #2b2b2b; stroke-width: 2; }
+      .box-text { font-family: Arial, sans-serif; font-size: 17px; fill: #1a1a1a; text-anchor: middle; }
+      .decision { fill: #fff5d6; stroke: #b57f00; stroke-width: 2; }
+      .overlay { fill: #e8f2ff; stroke: #2b5b88; stroke-width: 2; }
+      .arrow { stroke: #2d2d2d; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .arrow-dashed { stroke: #2b5b88; stroke-width: 2; fill: none; stroke-dasharray: 6 6; marker-end: url(#arrow); }
+      .label { font-family: Arial, sans-serif; font-size: 14px; fill: #444; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="1500" fill="#ffffff" />
+  <text x="600" y="40" class="title" text-anchor="middle">Flujo de ejecuci?n (Hospital Gungeon)</text>
+
+  <!-- Columna principal -->
+  <rect class="box" x="410" y="60" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="600" y="95">
+    <tspan x="600" dy="0">index.html</tspan>
+    <tspan x="600" dy="20">Carga Phaser + main.js</tspan>
+  </text>
+
+  <rect class="box" x="410" y="180" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="600" y="215">
+    <tspan x="600" dy="0">main.js</tspan>
+    <tspan x="600" dy="20">Configura Phaser.Game</tspan>
+    <tspan x="600" dy="20">Registra escenas + RunManager</tspan>
+  </text>
+
+  <rect class="box" x="410" y="300" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="600" y="335">
+    <tspan x="600" dy="0">Start</tspan>
+    <tspan x="600" dy="20">Pantalla inicial</tspan>
+    <tspan x="600" dy="20">Click ?EMPEZAR?</tspan>
+  </text>
+
+  <rect class="box" x="410" y="420" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="600" y="455">
+    <tspan x="600" dy="0">MenuScene</tspan>
+    <tspan x="600" dy="20">Selecciona dificultad</tspan>
+  </text>
+
+  <rect class="box" x="410" y="540" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="600" y="575">
+    <tspan x="600" dy="0">PreloadScene</tspan>
+    <tspan x="600" dy="20">Carga assets y animaciones</tspan>
+  </text>
+
+  <rect class="box" x="410" y="660" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="600" y="695">
+    <tspan x="600" dy="0">NarrativeScene</tspan>
+    <tspan x="600" dy="20">Historia inicial</tspan>
+  </text>
+
+  <rect class="box" x="410" y="780" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="600" y="815">
+    <tspan x="600" dy="0">HubScene</tspan>
+    <tspan x="600" dy="20">ENTER / SPACE / click</tspan>
+  </text>
+
+  <!-- Decisi?n RunManager -->
+  <polygon class="decision" points="600,900 720,970 600,1040 480,970" />
+  <text class="box-text" x="600" y="955">
+    <tspan x="600" dy="0">RunManager</tspan>
+    <tspan x="600" dy="20">?Quedan sectores?</tspan>
+  </text>
+
+  <!-- Sector (izquierda) -->
+  <rect class="box" x="80" y="1040" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="270" y="1075">
+    <tspan x="270" dy="0">SectorScene</tspan>
+    <tspan x="270" dy="20">Gameplay principal</tspan>
+    <tspan x="270" dy="20">mapa + player + enemigos + salas</tspan>
+  </text>
+
+  <!-- Boss (derecha) -->
+  <rect class="box" x="740" y="1040" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="930" y="1075">
+    <tspan x="930" dy="0">BossScene</tspan>
+    <tspan x="930" dy="20">Combate final</tspan>
+  </text>
+
+  <!-- Ending -->
+  <rect class="box" x="740" y="1180" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="930" y="1215">
+    <tspan x="930" dy="0">EndingScene</tspan>
+    <tspan x="930" dy="20">Final</tspan>
+  </text>
+
+  <!-- Menu reinicio -->
+  <rect class="box" x="410" y="1320" width="380" height="90" rx="12" ry="12" />
+  <text class="box-text" x="600" y="1355">
+    <tspan x="600" dy="0">MenuScene</tspan>
+    <tspan x="600" dy="20">(reinicio tras el final)</tspan>
+  </text>
+
+  <!-- Overlays -->
+  <rect class="overlay" x="80" y="1155" width="300" height="70" rx="10" ry="10" />
+  <text class="box-text" x="230" y="1188">
+    <tspan x="230" dy="0">HudScene (overlay)</tspan>
+    <tspan x="230" dy="20">vida + munici?n + dificultad</tspan>
+  </text>
+
+  <rect class="overlay" x="80" y="1240" width="300" height="70" rx="10" ry="10" />
+  <text class="box-text" x="230" y="1273">
+    <tspan x="230" dy="0">PauseMenu (overlay)</tspan>
+    <tspan x="230" dy="20">ESC / P</tspan>
+  </text>
+
+  <!-- Flechas verticales principales -->
+  <line class="arrow" x1="600" y1="150" x2="600" y2="180" />
+  <line class="arrow" x1="600" y1="270" x2="600" y2="300" />
+  <line class="arrow" x1="600" y1="390" x2="600" y2="420" />
+  <line class="arrow" x1="600" y1="510" x2="600" y2="540" />
+  <line class="arrow" x1="600" y1="630" x2="600" y2="660" />
+  <line class="arrow" x1="600" y1="750" x2="600" y2="780" />
+  <line class="arrow" x1="600" y1="870" x2="600" y2="900" />
+
+  <!-- Decisi?n hacia Sector y Boss -->
+  <polyline class="arrow" points="480,970 270,970 270,1040" />
+  <polyline class="arrow" points="720,970 930,970 930,1040" />
+  <text class="label" x="310" y="950">S?</text>
+  <text class="label" x="890" y="950">No</text>
+
+  <!-- Sector -> Hub (loop) -->
+  <polyline class="arrow" points="80,1085 30,1085 30,825 410,825" />
+  <text class="label" x="60" y="1065">sector:complete</text>
+
+  <!-- Boss -> Ending -->
+  <line class="arrow" x1="930" y1="1130" x2="930" y2="1180" />
+
+  <!-- Ending -> Menu reinicio -->
+  <polyline class="arrow" points="930,1270 930,1310 600,1310 600,1320" />
+
+  <!-- Overlays desde Sector -->
+  <line class="arrow-dashed" x1="270" y1="1130" x2="230" y2="1155" />
+  <line class="arrow-dashed" x1="270" y1="1130" x2="230" y2="1240" />
+</svg>
