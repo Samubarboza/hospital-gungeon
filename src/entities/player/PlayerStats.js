@@ -3,7 +3,7 @@ export class PlayerStats {
     constructor() {
         this.health = 100;
         this.maxHealth = 100;
-        this.speed = 200;
+        this.speed = 300;
         this.damage = 10;
         this.isDead = false;
 
@@ -25,7 +25,7 @@ export class PlayerStats {
         if (this.isDead) return; // Si ya está muerto, no hacemos nada
 
         this.health -= amount; // RESTAMOS UNA SOLA VEZ
-        
+
         console.log("Vida actual:", this.health);
 
         if (this.health <= 0) {
@@ -37,7 +37,7 @@ export class PlayerStats {
 
     heal(amount) {
         if (this.isDead) return; // Un muerto no puede curarse
-        
+
         this.health += amount;
         if (this.health > this.maxHealth) {
             this.health = this.maxHealth;

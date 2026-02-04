@@ -3,6 +3,7 @@ import { sceneManager } from '../core/SceneManager.js';
 import { Player } from '../entities/player/Player.js';
 import { ROOM_TEMPLATES } from '../systems/rooms/RoomTemplates.js';
 import { DoorSystem } from '../systems/rooms/DoorSystem.js';
+import { OverlayUI } from '../ui/OverlayUI.js';
 
 export class SectorScene extends Phaser.Scene {
     constructor() {
@@ -43,23 +44,21 @@ export class SectorScene extends Phaser.Scene {
             });
         }
 
-        const mapImage = this.add.image(0, 0, 'sector-map').setOrigin(0, 0);
-        const scale = Math.min(
-            this.scale.width / mapImage.width,
-            this.scale.height / mapImage.height
-        );
-        mapImage.setScale(scale);
-        mapImage.setDepth(0);
+        const starterTemplate = ROOM_TEMPLATES.starter;
 
-        this.worldWidth = mapImage.displayWidth;
-        this.worldHeight = mapImage.displayHeight;
+        // Use exact dimensions from template (800x600)
+        this.worldWidth = starterTemplate.width;
+        this.worldHeight = starterTemplate.height;
 
         this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
         this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
 
-        const starterTemplate = ROOM_TEMPLATES.starter;
-        this.roomScaleX = this.worldWidth / starterTemplate.width;
-        this.roomScaleY = this.worldHeight / starterTemplate.height;
+        // Background Graphics
+        this.bgGraphics = this.add.graphics().setDepth(0);
+        this.wallGraphics = this.add.graphics().setDepth(1); // Visual walls
+
+        this.roomScaleX = 1; // 1:1 scale with template
+        this.roomScaleY = 1;
 
         this.player = new Player(
             this,
@@ -159,16 +158,14 @@ export class SectorScene extends Phaser.Scene {
         this.roomSequence = ['starter', 'easy', 'medium', 'boss'];
         this.currentRoomIndex = 0;
         this.clearedRooms = new Set();
-        this.isTransitioning = false;
-        this.doorCooldownUntil = 0;
-        this.roomSpawnTimer = null;
-        this.roomSpawnQueue = [];
-        this.roomSpawnConfig = null;
-        this.separationRadius = 90;
-        this.separationStrength = 180;
         this.starterBossSpawned = false;
         this.starterBossDefeated = false;
         this.starterBossActive = false;
+
+        // UI Overlay
+        this.overlayUI = new OverlayUI(this);
+        this.overlayUI.init();
+        this.overlayUI.showRoomLabel(ROOM_TEMPLATES[this.roomSequence[0]]?.name || 'Inicio');
 
         this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
         this.loadRoomByIndex(0, 'left');
@@ -182,50 +179,41 @@ export class SectorScene extends Phaser.Scene {
             return;
         }
 
-        this.roomScaleX = this.worldWidth / template.width;
-        this.roomScaleY = this.worldHeight / template.height;
+        // Reset graphics
+        this.bgGraphics.clear();
+        this.wallGraphics.clear();
+
+        // Render Background Color
+        const bgColor = Phaser.Display.Color.HexStringToColor(template.backgroundColor).color;
+        this.bgGraphics.fillStyle(bgColor, 1);
+        this.bgGraphics.fillRect(0, 0, this.worldWidth, this.worldHeight);
+
+        // Render Visual Walls (matching test style)
+        this.wallGraphics.fillStyle(0x2c2c2c, 1); // Dark gray walls like test
+
+        // Draw Walls
+        template.walls.forEach(w => {
+            this.wallGraphics.fillRect(w.x, w.y, w.width, w.height);
+        });
+
+        // Draw Obstacles
+        this.wallGraphics.fillStyle(0x555555, 1); // Obstacle color
+        template.obstacles.forEach(o => {
+            this.wallGraphics.fillRect(o.x, o.y, o.width, o.height);
+        });
+
+        this.roomScaleX = 1;
+        this.roomScaleY = 1;
 
         this.isTransitioning = true;
         this.enemies.clear(true, true);
         this.player.bullets.clear(true, true);
         this.obstacles.clear(true, true);
         this.walls.clear(true, true);
-        if (this.roomSpawnTimer) {
-            this.roomSpawnTimer.remove(false);
-            this.roomSpawnTimer = null;
-        }
-        this.roomSpawnQueue = [];
+
         this.roomSpawnConfig = null;
 
-        const isCleared = this.clearedRooms.has(roomId);
-        if (!isCleared && template.enemies.length > 0) {
-            this.roomSpawnConfig = this.getRoomSpawnConfig(roomId, template);
-            this.roomSpawnQueue = this.buildSpawnQueue(template, this.roomSpawnConfig.total);
-            this.spawnRoomWave();
-            this.roomSpawnTimer = this.time.addEvent({
-                delay: this.roomSpawnConfig.delayMs,
-                loop: true,
-                callback: () => this.spawnRoomWave()
-            });
-        }
 
-        this.buildRoomColliders(template);
-
-        const scaledDoors = template.doors.map((door) => ({
-            ...door,
-            x: door.x * this.roomScaleX,
-            y: door.y * this.roomScaleY
-        }));
-        this.doorSystem.initDoors(scaledDoors);
-        this.doorSystem.getDoors().forEach((door) => {
-            door.width *= this.roomScaleX;
-            door.height *= this.roomScaleY;
-        });
-        if (this.enemies.countActive(true) > 0) {
-            this.doorSystem.lockAllDoors();
-        } else {
-            this.doorSystem.unlockAllDoors();
-        }
 
         if (playerStartSide === 'left') {
             this.player.x = 90 * this.roomScaleX;
@@ -241,59 +229,33 @@ export class SectorScene extends Phaser.Scene {
         this.currentRoomIndex = index;
         this.doorCooldownUntil = this.time.now + 300;
         this.isTransitioning = false;
-    }
 
-    getRoomSpawnConfig(roomId, template) {
-        if (template.enemies.some((enemy) => enemy.type === 'boss')) {
-            return { total: 1, perWave: 1, maxAlive: 1, delayMs: 1200 };
-        }
-        const defaults = {
-            starter: { total: 12, perWave: 3, maxAlive: 6, delayMs: 1200 },
-            easy: { total: 16, perWave: 4, maxAlive: 8, delayMs: 1100 },
-            medium: { total: 20, perWave: 4, maxAlive: 10, delayMs: 1000 },
-            boss: { total: 1, perWave: 1, maxAlive: 1, delayMs: 1200 }
-        };
-        return defaults[roomId] ?? { total: template.enemies.length * 3, perWave: 3, maxAlive: 8, delayMs: 1100 };
-    }
+        // Show label
+        this.overlayUI.showRoomLabel(template.name);
 
-    buildSpawnQueue(template, totalCount) {
-        const bases = template.enemies.length > 0
-            ? template.enemies
-            : [
-                { x: template.width * 0.5, y: template.height * 0.5, type: 'basic', hp: 30 }
-            ];
-        const queue = [];
-        for (let i = 0; i < totalCount; i += 1) {
-            const base = Phaser.Utils.Array.GetRandom(bases);
-            queue.push({
-                x: base.x,
-                y: base.y,
-                type: base.type ?? 'basic',
-                hp: base.hp ?? 30
+        // --- SISTEMA DIRECTO DEL TEST ---
+        // 1. Configurar puertas (bloqueadas si hay enemigos)
+        const scaledDoors = template.doors.map((door) => ({
+            ...door,
+            x: door.x * this.roomScaleX,
+            y: door.y * this.roomScaleY
+        }));
+        this.doorSystem.initDoors(scaledDoors); // Re-init doors for new room
+
+        const isCleared = this.clearedRooms.has(roomId);
+        if (!isCleared && template.enemies.length > 0) {
+            this.doorSystem.lockAllDoors();
+
+            // 2. Spawn enemigos INMEDIATO (Igual que el Test)
+            template.enemies.forEach(enemyData => {
+                this.spawnEnemy(
+                    enemyData.x * this.roomScaleX,
+                    enemyData.y * this.roomScaleY,
+                    enemyData
+                );
             });
-        }
-        return queue;
-    }
-
-    spawnRoomWave() {
-        if (!this.roomSpawnConfig || this.roomSpawnQueue.length === 0) return;
-        const maxAlive = this.roomSpawnConfig.maxAlive;
-        const currentAlive = this.enemies.countActive(true);
-        if (currentAlive >= maxAlive) return;
-        const availableSlots = Math.max(maxAlive - currentAlive, 0);
-        const toSpawn = Math.min(this.roomSpawnConfig.perWave, availableSlots, this.roomSpawnQueue.length);
-        const spawnPoints = this.getSpawnPoints();
-        const usedPoints = new Set();
-        for (let i = 0; i < toSpawn; i += 1) {
-            const enemyData = this.roomSpawnQueue.shift();
-            const point = this.pickSpawnPoint(spawnPoints, usedPoints);
-            const jitterX = Phaser.Math.Between(-40, 40);
-            const jitterY = Phaser.Math.Between(-40, 40);
-            this.spawnEnemy(
-                (point.x + jitterX) * this.roomScaleX,
-                (point.y + jitterY) * this.roomScaleY,
-                enemyData
-            );
+        } else {
+            this.doorSystem.unlockAllDoors();
         }
     }
 
@@ -301,7 +263,7 @@ export class SectorScene extends Phaser.Scene {
         const roomId = this.roomSequence[this.currentRoomIndex];
         if (roomId !== 'starter') return false;
         if (this.starterBossSpawned || this.starterBossDefeated) return false;
-        if (this.roomSpawnQueue.length > 0) return false;
+        // No wave queue, so check if enemies are already spawned
         if (this.enemies.countActive(true) > 0) return false;
         this.spawnStarterBoss();
         return true;
@@ -310,10 +272,6 @@ export class SectorScene extends Phaser.Scene {
     spawnStarterBoss() {
         this.starterBossSpawned = true;
         this.starterBossActive = true;
-        if (this.roomSpawnTimer) {
-            this.roomSpawnTimer.remove(false);
-            this.roomSpawnTimer = null;
-        }
         const template = ROOM_TEMPLATES[this.roomSequence[this.currentRoomIndex]];
         const spawnX = (template.width * 0.65) * this.roomScaleX;
         const spawnY = (template.height * 0.5) * this.roomScaleY;
@@ -382,9 +340,9 @@ export class SectorScene extends Phaser.Scene {
         enemy.setData('lastHit', 0);
         enemy.setData('isHurting', false);
         enemy.setData('isDying', false);
-        enemy.setDepth(9);
-        const bodyWidth = enemy.displayWidth * 0.6;
-        const bodyHeight = enemy.displayHeight * 0.6;
+        enemy.setDrag(200); // Friction for knockback (Same as Player)
+        const bodyWidth = enemy.displayWidth * 1.8; // Agrandado x2 (180%)
+        const bodyHeight = enemy.displayHeight * 1.8;
         enemy.body.setSize(bodyWidth, bodyHeight);
         enemy.body.setOffset(
             (enemy.displayWidth - bodyWidth) / 2,
@@ -442,6 +400,16 @@ export class SectorScene extends Phaser.Scene {
             }
             return;
         }
+        const angle = bullet.rotation;
+        const force = 200; // Reduced to half (was 400)
+        enemy.setVelocity(
+            Math.cos(angle) * force,
+            Math.sin(angle) * force
+        );
+
+        // Stun breve para que el empuje se note
+        enemy.setData('nextMoveAt', this.time.now + 200);
+
         if (enemy.getData('isBoss')) {
             this.playBossHurt(enemy);
         } else {
@@ -451,7 +419,7 @@ export class SectorScene extends Phaser.Scene {
 
     onEnemyKilled() {
         if (this.enemies.countActive(true) > 0) return;
-        if (this.roomSpawnQueue.length > 0) return;
+        // No wave queue, so check if boss should spawn
         if (this.maybeSpawnStarterBoss()) return;
         this.onRoomCleared();
     }
@@ -462,10 +430,6 @@ export class SectorScene extends Phaser.Scene {
         if (currentRoomId === 'boss') {
             this.completeSector();
             return;
-        }
-        if (this.roomSpawnTimer) {
-            this.roomSpawnTimer.remove(false);
-            this.roomSpawnTimer = null;
         }
         this.doorSystem.unlockForwardDoors();
     }
@@ -495,22 +459,16 @@ export class SectorScene extends Phaser.Scene {
             this.playEnemyAction(enemy, 'attack');
             enemy.setData('nextAttackAt', now + 700);
         }
-        player.receiveHit(10);
+        player.receiveHit(10, enemy); // Pass enemy as attacker to trigger Player knockback
     }
 
     handleExit() {
         if (this.exitTriggered) return;
         this.exitTriggered = true;
         this.player.setVelocity(0, 0);
-        this.tweens.add({
-            targets: this.player,
-            alpha: 0,
-            duration: 500,
-            onComplete: () => {
-                eventBus.emit('sector:complete');
-                sceneManager.go(this, 'HubScene');
-            }
-        });
+
+        // Victory handled purely by UI now, but we can keep scene transition if needed
+        this.overlayUI.showVictory();
     }
 
     update(time, delta) {
@@ -518,6 +476,42 @@ export class SectorScene extends Phaser.Scene {
         this.updateEnemies(delta);
         this.doorSystem.update(delta / 1000);
         this.checkDoorEntry();
+
+        // UPDATE HTML UI
+        this.updateHTMLUI();
+
+        const currentRoomId = this.roomSequence[this.currentRoomIndex];
+        if (this.enemies.countActive(true) === 0 && !this.clearedRooms.has(currentRoomId)) {
+            this.onRoomCleared();
+        }
+    }
+
+    updateHTMLUI() {
+        if (!this.overlayUI) return;
+
+        // Stats
+        const currentRoomId = this.roomSequence[this.currentRoomIndex];
+        const roomName = ROOM_TEMPLATES[currentRoomId]?.name || '---';
+        const totalRooms = this.roomSequence.length;
+        const enemyCount = this.enemies.countActive(true);
+        const playerHp = this.player.stats.health;
+        const maxHp = this.player.stats.maxHealth;
+
+        this.overlayUI.updateStats(
+            roomName,
+            this.currentRoomIndex + 1,
+            totalRooms,
+            enemyCount,
+            playerHp,
+            maxHp
+        );
+
+        // Door Status (only if changed? for now every frame is fine or throttle it)
+        // Optimization: DoorSystem could act as source of truth
+        this.overlayUI.updateDoorStatus(this.doorSystem.getDoors());
+
+        // Cleared Rooms
+        this.overlayUI.updateClearedRooms(this.clearedRooms);
     }
 
     updateEnemies() {
@@ -529,7 +523,9 @@ export class SectorScene extends Phaser.Scene {
                 return;
             }
             if (this.isEnemyBusy(enemy)) {
-                enemy.setVelocity(0, 0);
+                if (enemy.getData('state') !== 'hurt') {
+                    enemy.setVelocity(0, 0);
+                }
                 return;
             }
             this.maybeTriggerEnemyEmote(enemy, now);
@@ -566,6 +562,10 @@ export class SectorScene extends Phaser.Scene {
     }
 
     moveEnemyTowardPlayer(enemy) {
+        const now = this.time.now;
+        const nextMoveAt = enemy.getData('nextMoveAt') || 0;
+        if (now < nextMoveAt) return; // Stunned/Knocked back
+
         const speed = enemy.getData('speed');
         const distToPlayer = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
         if (distToPlayer < 35) {
@@ -573,7 +573,6 @@ export class SectorScene extends Phaser.Scene {
             return;
         }
 
-        const now = this.time.now;
         const nextOffsetAt = enemy.getData('nextOffsetAt') || 0;
         let offset = enemy.getData('targetOffset') || { x: 0, y: 0 };
         if (distToPlayer < 140) {
