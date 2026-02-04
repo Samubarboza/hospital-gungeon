@@ -5,7 +5,6 @@ import { SectorScene } from './scenes/SectorScene.js';
 import { BossScene } from './scenes/BossScene.js';
 import { EndingScene } from './scenes/EndingScene.js';
 import PreloadScene from './scenes/PreloadScene.js';
-import PauseMenu from './ui/menus/PauseMenu.js';
 import './core/RunManager.js';
 
 const config = {
@@ -28,7 +27,7 @@ const config = {
         default: 'arcade',
         arcade: { debug: false }
     },
-    scene: [Start, MenuScene,PauseMenu, PreloadScene, HubScene, SectorScene, BossScene, EndingScene],
+    scene: [Start, MenuScene, PreloadScene, HubScene, SectorScene, BossScene, EndingScene],
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH

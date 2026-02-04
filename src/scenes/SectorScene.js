@@ -177,12 +177,6 @@ export class SectorScene extends Phaser.Scene {
 
         this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
         this.loadRoomByIndex(0, 'left');
-
-        this.input.keyboard.on('keydown-ESC', () => {
-        this.scene.launch('PauseMenu', { 
-        gameScene: this.scene.key 
-        });
-    });
     }
     shoot() {
     // ... tu código de disparo
@@ -564,15 +558,18 @@ export class SectorScene extends Phaser.Scene {
         });
     }
 
- update(time, delta) {
-    
-    // Resto de la lógica del juego
+    update(time, delta) {
     this.player.update();
     this.updateEnemies(delta);
     this.doorSystem.update(delta / 1000);
     this.checkDoorEntry();
     this.updateHUD();
-}
+        // Detectar pausa
+        if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+        this.scene.pause();
+        this.scene.launch('PauseMenu');
+        }
+    }
 
     updateEnemies() {
         const now = this.time.now;
