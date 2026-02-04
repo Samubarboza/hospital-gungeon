@@ -1,47 +1,47 @@
 # Hospital Gungeon
-[Leer en espanol](README_ES.md)
+[Read this README in English](README.md)
 
-Hospital Gungeon is a top-down action game prototype built with Phaser 3.
-This repository is an MVP (Minimum Viable Product): the smallest playable slice
-that proves the core loop works (movement, combat, rooms, UI, and progression flow).
+Hospital Gungeon es un prototipo de juego de accion top-down construido con Phaser 3.
+Este repositorio es un MVP (Producto Minimo Viable): el recorte jugable mas pequeno
+que demuestra el loop principal (movimiento, combate, salas, UI y flujo de progreso).
 
-## About the game (brief)
-Top-down action/shooter with room progression. The story is simple: night falls over the hospital, the lights flicker, and the halls are empty; you are the last one standing and must survive and find the exit. In the MVP you clear rooms, fight enemies, and push toward a boss, with health/ammo HUD and pause.
+## Sobre el juego (breve)
+Juego top-down de accion/disparos con progresion por salas. La historia es simple: la noche cae sobre el hospital, las luces parpadean y los pasillos estan vacios; eres el ultimo en pie y debes sobrevivir y encontrar la salida. En el MVP recorres salas, peleas contra enemigos y avanzas hacia un boss, con HUD de vida/municion y pausa.
 
-## Project developers
+## Desarrolladores del proyecto
 - Guillermo Duarte
 - Nelson Duarte
 - Matias Aguayo
 - Katherine Varela
 - Eduardo Ovelar
 
-Thanks to the team for their solid work building and integrating the core systems of the project.
+Gracias al equipo por su trabajo solido en la construccion e integracion de los sistemas centrales del proyecto.
 
-## Engine
+## Motor
 - Phaser 3 (Arcade Physics)
 
-## How to run
-This project is static (no build step). Use a local HTTP server so JSON/assets load correctly.
+## Como correr
+Este proyecto es estatico (sin build). Usa un servidor HTTP local para que JSON/asset carguen correctamente.
 
-Option A (Python):
+Opcion A (Python):
 ```bash
 py -m http.server 8080
 ```
 
-Option B (Node):
+Opcion B (Node):
 ```bash
 npx serve .
 ```
 
-Then open in your browser:
+Luego abre en tu navegador:
 ```text
 http://localhost:8080
 ```
 
-## Game flow (current)
+## Flujo del juego (actual)
 Start -> Menu -> Preload -> Narrative -> Hub -> Sector -> Hub -> Boss -> Ending -> Menu
 
-## Current architecture
+## Arquitectura actual
 ```
 hospital-gungeon/
 |
@@ -111,15 +111,13 @@ hospital-gungeon/
 |-- test/
 ```
 
-## MVP scope
-- Core loop: move, shoot, melee, take damage
-- Enemies: walker/shooter/hybrid + basic AI behaviors
-- Room system: doors, room progression, sector flow
-- UI: HUD (health/ammo) + pause menu
-- Narrative: intro scene before hub/sector flow
+## Alcance del MVP
+- Loop principal: mover, disparar, melee, recibir dano
+- Enemigos: walker/shooter/hybrid + comportamientos basicos de IA
+- Sistema de salas: puertas, progresion por salas, flujo de sector
+- UI: HUD (vida/municion) + menu de pausa
+- Narrativa: escena de introduccion antes de hub/sector
 
-## Notes
-- Assets are heavy; use a local server instead of file:// to avoid CORS issues.
-- If GitHub UI does not show all assets, use raw links or download the repo ZIP.
-
-
+## Notas
+- Los assets son pesados; usa un servidor local en lugar de file:// para evitar problemas de CORS.
+- Si GitHub no muestra todos los assets en la UI, usa enlaces raw o descarga el ZIP del repo.
