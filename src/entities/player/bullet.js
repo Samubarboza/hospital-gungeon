@@ -11,8 +11,12 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
         this.setRotation(angle); // Gira la bala hacia el mouse
         if (this.body) {
             this.body.setAllowGravity(false);
-            this.body.setCircle(4);
-            this.body.setOffset(0, 0);
+            const radius = 6;
+            this.body.setCircle(radius);
+            this.body.setOffset(
+                (this.width - radius * 2) / 2,
+                (this.height - radius * 2) / 2
+            );
         }
         
         // Usamos trigonometría para la velocidad:

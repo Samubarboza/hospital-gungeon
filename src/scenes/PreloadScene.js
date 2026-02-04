@@ -118,7 +118,18 @@ export default class PreloadScene extends Phaser.Scene {
             this.createLoadingUI();
         }
 
-        this.load.image('sector-map', 'public/assets/maps/sector1.png');
+        this.load.spritesheet('map1-walls-floor', 'public/assets/maps/map1/walls_floor.png', {
+            frameWidth: 16,
+            frameHeight: 16
+        });
+        this.load.spritesheet('map1-water', 'public/assets/maps/map1/water_detilazation_v2.png', {
+            frameWidth: 16,
+            frameHeight: 16
+        });
+        this.load.spritesheet('map1-objects', 'public/assets/maps/map1/Objects.png', {
+            frameWidth: 16,
+            frameHeight: 16
+        });
         // Player sprites are loaded per-action from player1 below.
         ENEMY_VARIANTS.forEach((variant) => {
             Object.entries(ENEMY_ACTIONS).forEach(([actionKey, action]) => {

@@ -1,8 +1,18 @@
 import { eventBus } from '../core/EventBus.js';
 import { sceneManager } from '../core/SceneManager.js';
 import { Player } from '../entities/player/Player.js';
+import EnemyFactory from '../entities/enemies/EnemyFactory.js';
 import { ROOM_TEMPLATES } from '../systems/rooms/RoomTemplates.js';
 import { DoorSystem } from '../systems/rooms/DoorSystem.js';
+import { buildMap1 } from '../systems/maps/Map1Builder.js';
+
+const AI_TUNING = {
+    detectionRange: 420,
+    walker: { speedMin: 190, speedMax: 230, damage: 16, attackRange: 80, attackCooldown: 480 },
+    shooter: { speedMin: 170, speedMax: 200, damage: 14, attackRange: 260, idealDistance: 190, attackCooldown: 650 },
+    hybrid: { speedMin: 210, speedMax: 250, damage: 20, attackRange: 90, attackCooldown: 420 },
+    fast: { speedMin: 240, speedMax: 280, damage: 18, attackRange: 80, attackCooldown: 420 }
+};
 
 export class SectorScene extends Phaser.Scene {
     constructor() {
@@ -43,16 +53,10 @@ export class SectorScene extends Phaser.Scene {
             });
         }
 
-        const mapImage = this.add.image(0, 0, 'sector-map').setOrigin(0, 0);
-        const scale = Math.min(
-            this.scale.width / mapImage.width,
-            this.scale.height / mapImage.height
-        );
-        mapImage.setScale(scale);
-        mapImage.setDepth(0);
-
-        this.worldWidth = mapImage.displayWidth;
-        this.worldHeight = mapImage.displayHeight;
+        const mapBuild = buildMap1(this);
+        this.mapLayers = mapBuild.layers;
+        this.worldWidth = mapBuild.pixelWidth;
+        this.worldHeight = mapBuild.pixelHeight;
 
         this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
         this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
@@ -97,6 +101,8 @@ export class SectorScene extends Phaser.Scene {
         });
 
         this.enemies = this.physics.add.group();
+        this.enemyFactory = new EnemyFactory(this);
+        this.events.on('enemyKilled', () => this.onEnemyKilled());
         this.enemyVariants = this.registry.get('enemyVariants') || [];
         this.enemyDefaultTexture = this.registry.get('enemyDefaultTexture') || 'enemy';
         this.enemyAnimMap = {
@@ -186,6 +192,9 @@ export class SectorScene extends Phaser.Scene {
         this.roomScaleY = this.worldHeight / template.height;
 
         this.isTransitioning = true;
+        if (this.enemyFactory) {
+            this.enemyFactory.destroyAll();
+        }
         this.enemies.clear(true, true);
         this.player.bullets.clear(true, true);
         this.obstacles.clear(true, true);
@@ -362,43 +371,69 @@ export class SectorScene extends Phaser.Scene {
     spawnEnemy(x, y, enemyData = {}) {
         const variant = enemyData.variant || Phaser.Utils.Array.GetRandom(this.enemyVariants);
         const textureKey = variant ? `${variant}-walk-000` : this.enemyDefaultTexture;
-        const enemy = this.physics.add.sprite(x, y, textureKey);
-        enemy.setOrigin(0.5, 1);
-        enemy.setData('variant', variant || 'default');
-        enemy.setData('state', 'walk');
-        enemy.setData('nextEmoteAt', this.time.now + Phaser.Math.Between(1500, 3500));
-        enemy.setData('nextIdleBlinkAt', this.time.now + Phaser.Math.Between(1200, 3200));
-        enemy.setData('nextAttackAt', 0);
-        enemy.setData('targetOffset', {
-            x: Phaser.Math.Between(-90, 90),
-            y: Phaser.Math.Between(-90, 90)
-        });
-        const isBoss = enemyData.type === 'boss';
         const isFast = enemyData.type === 'fast';
-        const scale = isBoss ? 0.32 : 0.25;
-        enemy.setScale(scale);
-        enemy.setData('hp', enemyData.hp ?? 30);
-        enemy.setData('speed', isBoss ? 90 : isFast ? 200 : Phaser.Math.Between(150, 190));
-        enemy.setData('lastHit', 0);
-        enemy.setData('isHurting', false);
-        enemy.setData('isDying', false);
-        enemy.setDepth(9);
-        const bodyWidth = enemy.displayWidth * 0.6;
-        const bodyHeight = enemy.displayHeight * 0.6;
-        enemy.body.setSize(bodyWidth, bodyHeight);
-        enemy.body.setOffset(
-            (enemy.displayWidth - bodyWidth) / 2,
-            enemy.displayHeight - bodyHeight
-        );
-        const defaultAnim = variant ? this.enemyAnimMap.walk[variant] : null;
-        if (defaultAnim) {
-            enemy.anims.play(defaultAnim, true);
-        }
-        this.enemies.add(enemy);
+        const enemyType = enemyData.type === 'shooter'
+            ? EnemyFactory.TYPES.SHOOTER
+            : enemyData.type === 'hybrid'
+                ? EnemyFactory.TYPES.HYBRID
+                : EnemyFactory.TYPES.WALKER;
 
-        if (Phaser.Math.Between(0, 100) < 15) {
-            this.playEnemyAction(enemy, 'taunt');
+        const animKeys = variant && variant !== 'default'
+            ? {
+                walk: this.enemyAnimMap.walk[variant],
+                idle: this.enemyAnimMap.idle[variant],
+                idleBlink: this.enemyAnimMap.idleBlink[variant],
+                attack: this.enemyAnimMap.attack[variant],
+                hurt: this.enemyAnimMap.hurt[variant],
+                dying: this.enemyAnimMap.dying[variant]
+            }
+            : {};
+
+        const tuning = enemyType === EnemyFactory.TYPES.SHOOTER
+            ? AI_TUNING.shooter
+            : enemyType === EnemyFactory.TYPES.HYBRID
+                ? AI_TUNING.hybrid
+                : isFast
+                    ? AI_TUNING.fast
+                    : AI_TUNING.walker;
+
+        const speed = enemyData.speed ?? Phaser.Math.Between(tuning.speedMin, tuning.speedMax);
+        const damage = enemyData.damage ?? tuning.damage;
+        const attackRange = enemyData.attackRange ?? tuning.attackRange;
+        const attackCooldown = enemyData.attackCooldown ?? tuning.attackCooldown;
+        const detectionRange = enemyData.detectionRange ?? AI_TUNING.detectionRange;
+        const separationScale = (this.roomScaleX + this.roomScaleY) * 0.5;
+        const separationRadius = enemyData.separationRadius ?? 70 * separationScale;
+        const separationStrength = enemyData.separationStrength ?? 140 * separationScale;
+
+        const enemyConfig = {
+            texture: textureKey,
+            variant: variant || 'default',
+            animKeys,
+            health: enemyData.hp ?? 30,
+            speed,
+            damage,
+            detectionRange,
+            attackRange,
+            attackCooldown,
+            scale: 0.25,
+            separationGroup: this.enemies,
+            separationRadius,
+            separationStrength
+        };
+
+        if (tuning.idealDistance !== undefined) {
+            enemyConfig.idealDistance = enemyData.idealDistance ?? tuning.idealDistance;
         }
+
+        const enemy = this.enemyFactory.create(enemyType, x, y, enemyConfig);
+
+        if (!enemy) return;
+        if (typeof enemy.setPlayer === 'function') {
+            enemy.setPlayer(this.player);
+        }
+        enemy.setDepth(9);
+        this.enemies.add(enemy);
     }
 
     spawnBoss(x, y) {
@@ -431,7 +466,13 @@ export class SectorScene extends Phaser.Scene {
 
     onBulletHitEnemy(bullet, enemy) {
         bullet.disableBody(true, true);
-        if (enemy.getData('isDying')) return;
+        if (enemy.getData?.('isDying')) return;
+
+        if (typeof enemy.takeDamage === 'function') {
+            enemy.takeDamage(this.player.stats.damage);
+            return;
+        }
+
         const hp = enemy.getData('hp') - this.player.stats.damage;
         enemy.setData('hp', hp);
         if (hp <= 0) {
@@ -476,6 +517,7 @@ export class SectorScene extends Phaser.Scene {
     }
 
     onPlayerHitEnemy(player, enemy) {
+        if (enemy.stateMachine) return;
         const now = this.time.now;
         const lastHit = enemy.getData('lastHit') || 0;
         if (now - lastHit < 400) return;
@@ -515,6 +557,9 @@ export class SectorScene extends Phaser.Scene {
 
     update(time, delta) {
         this.player.update();
+        if (this.enemyFactory) {
+            this.enemyFactory.updateAll(time, delta);
+        }
         this.updateEnemies(delta);
         this.doorSystem.update(delta / 1000);
         this.checkDoorEntry();
@@ -526,6 +571,9 @@ export class SectorScene extends Phaser.Scene {
             if (!enemy.active) return;
             if (enemy.getData('isBoss')) {
                 this.updateBoss(enemy, now);
+                return;
+            }
+            if (enemy.stateMachine) {
                 return;
             }
             if (this.isEnemyBusy(enemy)) {
